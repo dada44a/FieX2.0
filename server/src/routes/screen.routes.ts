@@ -34,8 +34,8 @@ screenRoutes.get('/:id', async (c) => {
 screenRoutes.post('/', async (c) => {
   try {
     const db = connectDb();
-    const data: NewScreens = await c.req.json();
-    const newScreening: Screens = await db.insert(screens).values(data).returning();
+    const data = await c.req.json();
+    const newScreening = await db.insert(screens).values(data).returning();
     return c.json({ message: 'Create a new screen', data: newScreening });
   } catch (error: any) {
     return c.json({ message: 'Error creating screen', error: error.message }, 500);

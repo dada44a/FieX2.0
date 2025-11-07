@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { LoadingTable } from "../loadingtable";
 
 interface Movie {
   id: number;
@@ -44,7 +45,7 @@ const MovieManagement: React.FC = () => {
   return (
     <div className="overflow-x-auto p-4">
       {/* Loading and Error States */}
-      {isPending && <p>Loading movies...</p>}
+      {isPending && <LoadingTable />}
       {error && <p className="text-red-500">{(error as Error).message}</p>}
 
       {/* Movies Table */}
