@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-const BASE_URL = "http://localhost:8080";
+const BASE_URL = "http://localhost:4000";
 
 interface Movie {
   id: number;

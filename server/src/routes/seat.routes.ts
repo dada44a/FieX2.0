@@ -17,40 +17,62 @@ seatRoutes.get('/', async (c) => {
   }
 });
 
-// ? create a new seat
-seatRoutes.post("/", async (c) => {
-  const data: NewSeat = await c.req.json();
-
+// ? create a new seat according to screenId
+seatRoutes.post("/:id", async (c) => {
   try {
+    const data: { row: string; column: number }[] = await c.req.json(); // array from frontend
+    const screenId = Number(c.req.param("id"));
+
     const db = connectDb();
-    const screenExists: Screens = await db.select().from(screens).where(eq(screens.id, data.screenId)).limit(1);
-    if (!screenExists) {
-      return c.json({ message: `Screen with ID ${data.screenId} does not exist` }, 400);
+
+    // Check if the screen exists
+    const screenExists = await db
+      .select()
+      .from(screens)
+      .where(eq(screens.id, screenId))
+      .limit(1);
+
+    if (!screenExists.length) {
+      return c.json({ message: `Screen with ID ${screenId} does not exist` }, 400);
     }
 
-    const newSeat: NewSeat = await db.insert(seats).values(data).returning();
-    return c.json({ message: 'Create a new seat', data: newSeat });
+    // Add screenId to each seat
+    const seatsToInsert = data.map((seat) => ({
+      ...seat,
+      screenId,
+    }));
+
+    // Insert all seats at once
+    const newSeats = await db.insert(seats).values(seatsToInsert).returning();
+
+    return c.json({ message: 'Seats created successfully', data: newSeats });
 
   } catch (error: any) {
-    return c.json({ message: 'Error creating seat', error: error.message }, 500);
+    return c.json({ message: 'Error creating seats', error: error.message }, 500);
   }
-})
+});
 
 
-//read by id
+
 seatRoutes.get('/:id', async (c) => {
   const { id } = c.req.param();
 
   try {
     const db = connectDb();
-    const seat: Seat = await db.select().from(seats).where(eq(seats.id, Number(id)));
-    if (!seat) {
-      return c.json({ message: `Seat with ID ${id} not found` }, 404);
+
+    // Fetch all seats for this screen ID
+    const seatList = await db
+      .select()
+      .from(seats)
+      .where(eq(seats.screenId, Number(id)));
+
+    if (!seatList || seatList.length === 0) {
+      return c.json({ message: `No seats found for Screen ID ${id}` }, 404);
     }
-    return c.json({ message: `Details of seat with ID ${id}`, data: seat });
-  }
-  catch (error: any) {
-    return c.json({ message: 'Error fetching seat', error: error.message }, 500);
+
+    return c.json({ message: `Seats for Screen ID ${id}`, data: seatList });
+  } catch (error: any) {
+    return c.json({ message: 'Error fetching seats', error: error.message }, 500);
   }
 });
 
