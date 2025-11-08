@@ -41,7 +41,7 @@ function App() {
       <section className='mx-10 min-h-screen'>
         <h1 className='text-4xl font-bold'>#Upcoming</h1>
         {/* movie list */}
-        <div className='py-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10'>
+        <div className='py-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-10'>
           {/* rendering and lazy loading */}
           {Array.from({ length: 5 }).map((_, index) => (
             <Suspense key={index} fallback={<CardSkeleton />}>
