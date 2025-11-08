@@ -56,9 +56,6 @@ export const shows = pgTable("shows", {
         .references(() => movies.id, { onDelete: "cascade" }),
     showTime: time("show_time").notNull(),
     showDate: date("show_date").notNull(),
-    adminId: integer("admin_id")
-        .notNull()
-        .references(() => users.id, { onDelete: "cascade" }),
     screenId: integer("screen_id")
         .notNull()
         .references(() => screens.id, { onDelete: "cascade" }),

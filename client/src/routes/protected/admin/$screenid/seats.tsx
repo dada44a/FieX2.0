@@ -104,7 +104,7 @@ function RouteComponent() {
   // --- Loading skeleton ---
   if (isLoading)
     return (
-     <LoadingTable />
+     <LoadingTable wantToShow={true} />
     );
 
   // --- Error state ---
