@@ -7,11 +7,12 @@ import type { Movie, NewMovie } from "../types.js";
 const movieRoutes = new Hono();
 
 movieRoutes.get('/', async (c) => {
-  try{
+  try {
     const db = connectDb();
-    const movieList: Movie[] =  await db.select().from(movies);
-    return c.json({ data: movieList });
+    const movieList: Movie[] = await db.select().from(movies).execute();
+    return c.json({ data: movieList , message: 'List of movies' });
   } catch (error: any) {
+    console.error(error);
     return c.json({ message: 'Error fetching movies', error: error.message }, 500);
   }
 });

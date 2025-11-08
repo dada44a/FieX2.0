@@ -45,7 +45,7 @@ const MovieManagement: React.FC = () => {
   return (
     <div className="overflow-x-auto p-4">
       {/* Loading and Error States */}
-      {isPending && <LoadingTable />}
+      {isPending && <LoadingTable wantToShow={false} />}
       {error && <p className="text-red-500">{(error as Error).message}</p>}
 
       {/* Movies Table */}

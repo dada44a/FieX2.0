@@ -9,7 +9,7 @@ const screenRoutes = new Hono();
 screenRoutes.get('/', async(c) => {
   try {
     const db = connectDb();
-    const screensList: Screens = await db.select().from(screens);
+    const screensList: Screens[] = await db.select().from(screens);
     return c.json({ message: 'List of screens', data: screensList });
   } catch (error: any) {
     return c.json({ message: 'Error fetching screens', error: error.message }, 500);

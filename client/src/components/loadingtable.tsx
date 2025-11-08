@@ -1,9 +1,11 @@
 import React from "react"
 
-export const LoadingTable = React.memo(() => {
+export const LoadingTable = React.memo((props:{wantToShow:boolean}) => {
   return (
      <>
+     {props.wantToShow && (
         <div className="skeleton h-[130px] w-[330px] rounded-xl m-10"></div>
+      )}
         <div className="overflow-x-auto p-10">
           <table className="table w-full">
             <thead>
