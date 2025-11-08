@@ -163,8 +163,8 @@ const ScreenManagement: React.FC = () => {
                   <td>{screen.price}</td>
                   <td className="flex gap-2">
                     <button className="btn btn-sm btn-neutral" onClick={() => handleEditScreen(screen)}>Edit</button>
-                    <button className="btn btn-sm btn-accent" onClick={() => handleDeleteScreen(screen.id)}>Delete</button>
-                    <Link to="/protected/admin/$screenid/seats" params={{screenid: screen.id.toString()}} className="btn btn-sm btn-accent">Seats</Link>
+                    <button className="btn btn-sm btn-error" onClick={() => handleDeleteScreen(screen.id)}>Delete</button>
+                    <Link to="/protected/admin/$screenid/seats" params={{screenid: screen.id.toString()}} className="btn btn-sm btn-ghost">Seats</Link>
                   </td>
                 </tr>
               )) 
