@@ -91,7 +91,6 @@ showRoutes.post("/", async (c) => {
                 showDate,
                 showTime,
             });
-        console.log("✅ Inserted new show:", { movieId, screenId, showDate, showTime });
 
         return c.json(
             { message: "Show created successfully", show: inserted[0] },
