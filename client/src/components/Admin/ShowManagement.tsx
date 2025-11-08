@@ -34,33 +34,40 @@ const ShowManagement: React.FC = () => {
   });
 
   const { data, isLoading, error, isError } = useQuery({
-    queryKey: ['movies', 'screens', 'shows'],
+    queryKey: ['movies', 'screens'],
     queryFn: async () => {
-      const [moviesRes, screensRes, showsRes] = await Promise.all([
+      const [moviesRes, screensRes] = await Promise.all([
         fetch(`${BASE_URL}/api/movies`),
         fetch(`${BASE_URL}/api/screens`),
-        fetch(`${BASE_URL}/api/shows`),
       ]);
 
       if (!moviesRes.ok) throw new Error('Failed to fetch movies');
       if (!screensRes.ok) throw new Error('Failed to fetch screens');
 
-      const [moviesData, screensData, showsData] = await Promise.all([
+      const [moviesData, screensData] = await Promise.all([
         moviesRes.json(),
         screensRes.json(),
-        showsRes.json(),
       ]);
       return {
         movies: Array.isArray(moviesData.data) ? moviesData.data : [],
         screens: Array.isArray(screensData.data) ? screensData.data : [],
-        shows: Array.isArray(showsData.data) ? showsData.data : [],
       };
+    },
+  });
+
+  const { data: showsData, isLoading: isLoadingShows } = useQuery({
+    queryKey: ['shows'],
+    queryFn: async () => {
+      const res = await fetch(`${BASE_URL}/api/shows`);
+      if (!res.ok) throw new Error('Failed to fetch shows');
+      const data = await res.json();
+      return Array.isArray(data.data) ? data.data : [];
     },
   });
 
   const movies = data?.movies ?? [];
   const screens = data?.screens ?? [];
-  const shows = data?.shows ?? [];
+  const shows = showsData ?? [];
 
   // --- Add Show Form ---
   const form = useForm({
@@ -80,7 +87,7 @@ const ShowManagement: React.FC = () => {
             showDate: values.value.showDate,
             showTime: values.value.showTime,
           },
-          queryKey: ['movies', 'screens', 'shows'],
+          queryKey: ['shows'],
         },
         {
           onSuccess: async () => {
@@ -384,7 +391,7 @@ const ShowManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
+              {isLoadingShows ? (
                 <tr>
                   <td colSpan={6} className="text-center p-4">
                     Loading...

@@ -30,6 +30,40 @@ movieRoutes.post('/', async (c) => {
     }
 }); 
 
+movieRoutes.get("/next-three", async (c) => {
+  const db = connectDb();
+
+  const today = new Date();
+  const endDate = new Date();
+  endDate.setDate(today.getDate() + 2);
+
+  const todayStr = today.toISOString().split("T")[0];
+  const endDateStr = endDate.toISOString().split("T")[0];
+
+  // Fetch movies that have shows in the next 3 days
+  const moviesWithShows = await db
+    .select({
+      id: movies.id,
+      title: movies.title,
+      genre: movies.genre,
+      imageUrl: movies.imageLink,
+    })
+    .from(movies)
+    .innerJoin(shows, eq(movies.id, shows.movieId))
+    .where(
+      and(
+        gte(shows.showDate, todayStr),
+        lte(shows.showDate, endDateStr)
+      )
+    )
+    .groupBy(movies.id).execute(); // ensures unique movies
+
+  return c.json({
+    message: "Movies with shows in the next 3 days",
+    movies: moviesWithShows,
+  });
+});
+
 movieRoutes.get('/:id', async (c) => {
   const { id } = c.req.param();
   try {
@@ -68,34 +102,34 @@ movieRoutes.delete('/:id', async (c) => {
 });
 
 
-movieRoutes.get("/next-3-days", async (c) => {
-  const db = connectDb();
+// movieRoutes.get("/next-3-days", async (c) => {
+//   const db = connectDb();
 
-  const today = new Date();
-  const endDate = new Date();
+//   const today = new Date();
+//   const endDate = new Date();
 
-  endDate.setDate(today.getDate() + 2); // next 3 days
+//   endDate.setDate(today.getDate() + 2); // next 3 days
 
-  const todayStr = today.toISOString().split("T")[0];
-  const endDateStr = endDate.toISOString().split("T")[0];
+//   const todayStr = today.toISOString().split("T")[0];
+//   const endDateStr = endDate.toISOString().split("T")[0];
 
-  // Fetch shows within the 3-day range
-  const allShows = await db.select().from(shows).where(
-    and(
-      gte(shows.showDate, todayStr),
-      lte(shows.showDate, endDateStr)
-    )
-  );
+//   // Fetch shows within the 3-day range
+//   const allShows = await db.select().from(shows).where(
+//     and(
+//       gte(shows.showDate, todayStr),
+//       lte(shows.showDate, endDateStr)
+//     )
+//   );
 
-  // Group shows by movieId
-  const movieIdList:Set<number> = new Set();
-  allShows.forEach((show: any) => {
-    const movieId = show.movieId.toString();
-    movieIdList.add(movieId);
-  });
+//   // Group shows by movieId
+//   const movieIdList:Set<number> = new Set();
+//   allShows.forEach((show: any) => {
+//     movieIdList.add(show.movieId);
+//   });
 
-  return c.json({ message: "Movies with shows in the next 3 days", movieIds: Array.from(movieIdList) });
-});
+//   return c.json({ message: "Movies with shows in the next 3 days", movieIds: Array.from(movieIdList) });
+// });
+
 
 
 export default movieRoutes;
