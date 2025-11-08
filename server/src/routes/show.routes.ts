@@ -11,37 +11,37 @@ const showRoutes = new Hono();
 
 // get all shows
 showRoutes.get('/', async (c) => {
-  try {
-    const db = connectDb();
-    const show: Show[] = await db.select().from(shows);
+    try {
+        const db = connectDb();
+        const show: Show[] = await db.select().from(shows);
 
-    const responseData = await Promise.all(
-      show.map(async (s) => {
-        const movie = await db
-          .select({ title: movies.title })
-          .from(movies)
-          .where(eq(movies.id, s.movieId))
-          .limit(1).execute(); // fetch single movie
+        const responseData = await Promise.all(
+            show.map(async (s) => {
+                const movie = await db
+                    .select({ title: movies.title })
+                    .from(movies)
+                    .where(eq(movies.id, s.movieId))
+                    .limit(1).execute(); // fetch single movie
 
-        const screen = await db
-          .select({ name: screens.name })
-          .from(screens)
-          .where(eq(screens.id, s.screenId))
-          .limit(1).execute(); // fetch single screen
+                const screen = await db
+                    .select({ name: screens.name })
+                    .from(screens)
+                    .where(eq(screens.id, s.screenId))
+                    .limit(1).execute(); // fetch single screen
 
-        return {
-          ...s,
-          movieTitle: movie ? movie[0].title : null,
-          screenName: screen ? screen[0].name : null,
-        };
-      })
-    );
+                return {
+                    ...s,
+                    movieTitle: movie ? movie[0].title : null,
+                    screenName: screen ? screen[0].name : null,
+                };
+            })
+        );
 
-    console.log("Fetched shows:", responseData);
-    return c.json({ message: 'List of shows', data: responseData });
-  } catch (error: any) {
-    return c.json({ message: 'Internal Server Error', error: error.message }, 500);
-  }
+        console.log("Fetched shows:", responseData);
+        return c.json({ message: 'List of shows', data: responseData });
+    } catch (error: any) {
+        return c.json({ message: 'Internal Server Error', error: error.message }, 500);
+    }
 });
 
 
@@ -73,9 +73,9 @@ showRoutes.post("/", async (c) => {
         const db = connectDb();
 
         // ✅ Check for duplicates
-        const alreadyExists = await checkerDateTime(db,screenId, showDate, showTime);
+        const alreadyExists = await checkerDateTime(db, screenId, showDate, showTime);
         console.log("Checking for existing show:", alreadyExists);
-        if (alreadyExists!== null) {
+        if (alreadyExists !== null) {
             return c.json(
                 { message: "Show with the same screen, date, and time already exists" },
                 400
@@ -103,6 +103,77 @@ showRoutes.post("/", async (c) => {
 });
 
 
+showRoutes.get("/next-three/:id", async (c) => {
+  try {
+    const db = connectDb();
+    const movieId = Number(c.req.param("id"));
+    if (isNaN(movieId)) return c.json({ message: "Invalid movie ID" }, 400);
+
+    const today = new Date();
+    const endDate = new Date();
+    endDate.setDate(today.getDate() + 2);
+
+    const todayStr = today.toISOString().split("T")[0];
+    const endDateStr = endDate.toISOString().split("T")[0];
+
+    // Fetch shows with movie info
+    const rows = await db
+      .select({
+        showId: shows.id,
+        showDate: shows.showDate,
+        showTime: shows.showTime,
+        screenId: shows.screenId,
+        title: movies.title,
+        genre: movies.genre,
+        imageUrl: movies.imageLink,
+        description: movies.description,
+        release: movies.releaseDate,
+      })
+      .from(shows)
+      .innerJoin(movies, eq(movies.id, shows.movieId))
+      .where(
+        and(
+          eq(shows.movieId, movieId),
+          gte(shows.showDate, todayStr),
+          lte(shows.showDate, endDateStr)
+        )
+      )
+      .groupBy(
+        shows.id,
+        movies.id
+      )
+      .execute();
+
+    if (!rows.length) {
+      return c.json({ message: "No shows found", movie: null, shows: {} });
+    }
+
+    // Group shows by date in JS (fast for small datasets like 3 days)
+    const showsByDate: Record<string, any[]> = {};
+    rows.forEach((row:any) => {
+      const date = row.showDate; // Already a string in your DB
+      if (!showsByDate[date]) showsByDate[date] = [];
+      showsByDate[date].push({
+        showId: row.showId,
+        showTime: row.showTime,
+        screenId: row.screenId,
+      });
+    });
+
+    // Movie info (all rows have same movie data)
+    const { title, genre, imageUrl, description, release } = rows[0];
+
+    return c.json({
+      message: "Shows for this movie in the next 3 days",
+      movie: { title, genre, imageUrl, description, release },
+      shows: showsByDate,
+    });
+  } catch (err: any) {
+    console.error(err);
+    return c.json({ message: "Internal server error", error: err.message }, 500);
+  }
+});
+
 
 showRoutes.get('/:id', async (c) => {
     const { id } = c.req.param();
@@ -127,7 +198,7 @@ showRoutes.put('/:id', async (c) => {
     try {
         const db = connectDb();
 
-      
+
 
         const updatedShow = await db.update(shows).set(data).where(eq(shows.id, Number(id))).execute();
         return c.json({ message: `Update show with ID: ${id}`, show: updatedShow });
@@ -153,28 +224,6 @@ showRoutes.delete('/:id', async (c) => {
 });
 
 
-showRoutes.get("/next-3-days", async (c) => {
-    const db = connectDb();
-    const today = new Date();
-    const endDate = new Date();
-    endDate.setDate(today.getDate() + 2); // next 3 days
-
-    // Fetch shows within the 3-day range
-    const allShows = await db.select().from(shows).where(
-        and(
-            gte(shows.showDate, today.toISOString().split("T")[0]),
-            lte(shows.showDate, endDate.toISOString().split("T")[0])
-        )
-    );
-
-    const grouped: Record<string, typeof allShows> = {};
-    allShows.forEach((show: any) => {
-        const date = show.showDate.toISOString().split("T")[0]; // YYYY-MM-DD
-        if (!grouped[date]) grouped[date] = [];
-        grouped[date].push(show);
-    });
-    return c.json({ message: "Shows for the next 3 days", data: grouped });
-});
 
 
 export default showRoutes;
