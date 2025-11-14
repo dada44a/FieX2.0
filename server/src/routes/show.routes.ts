@@ -136,6 +136,66 @@ showRoutes.post("/", async (c) => {
 });
 
 
+showRoutes.get("/:id/next-three", async (c) => {
+  try {
+    const db = connectDb();
+    const movieId = Number(c.req.param("id")); // get movie id from params
+
+    const today = new Date();
+    const endDate = new Date();
+    endDate.setDate(today.getDate() + 2); // next 3 days
+
+    const formatDate = (d: Date) => d.toISOString().split("T")[0];
+    const todayStr = formatDate(today);
+    const endDateStr = formatDate(endDate);
+
+    // Join movies with shows and filter by movieId & date range
+    const rows = await db
+      .select({
+        movieId: movies.id,
+        title: movies.title,
+        imageLink: movies.imageLink,
+        genre: movies.genre,
+        description: movies.description,
+        showId: shows.id,
+        showDate: shows.showDate,
+        screenId: shows.screenId
+      })
+      .from(movies)
+      .leftJoin(shows, eq(shows.movieId, movies.id))
+      .where(
+        and(
+          eq(movies.id, movieId),
+          gte(shows.showDate, todayStr),
+          lte(shows.showDate, endDateStr)
+        )
+      );
+
+    if (!rows.length) return c.json({ message: "No shows found or movie not found" }, 404);
+
+    // Extract movie details (same for all rows)
+    const { movieId: id, title, description, imageLink, genre } = rows[0];
+
+    // Group shows by date
+    const grouped: Record<string, typeof rows[0][]> = {};
+    rows.forEach((row:any) => {
+      const dateStr = row.showDate instanceof Date ? formatDate(row.showDate) : row.showDate;
+      if (!grouped[dateStr]) grouped[dateStr] = [];
+      grouped[dateStr].push(row);
+    });
+
+    return c.json({
+      movieDetails: { id, title, description, imageLink, genre  },
+      shows: grouped
+    });
+
+  } catch (err) {
+    console.error("Error fetching movie shows:", err);
+    return c.json({ message: "Internal server error", error: String(err) }, 500);
+  }
+});
+
+
 
 
 showRoutes.get('/:id', async (c) => {
@@ -186,29 +246,6 @@ showRoutes.delete('/:id', async (c) => {
 
 });
 
-
-showRoutes.get("/next-3-days", async (c) => {
-    const db = connectDb();
-    const today = new Date();
-    const endDate = new Date();
-    endDate.setDate(today.getDate() + 2); // next 3 days
-
-    // Fetch shows within the 3-day range
-    const allShows = await db.select().from(shows).where(
-        and(
-            gte(shows.showDate, today.toISOString().split("T")[0]),
-            lte(shows.showDate, endDate.toISOString().split("T")[0])
-        )
-    );
-
-    const grouped: Record<string, typeof allShows> = {};
-    allShows.forEach((show: any) => {
-        const date = show.showDate.toISOString().split("T")[0]; // YYYY-MM-DD
-        if (!grouped[date]) grouped[date] = [];
-        grouped[date].push(show);
-    });
-    return c.json({ message: "Shows for the next 3 days", data: grouped });
-});
 
 
 export default showRoutes;

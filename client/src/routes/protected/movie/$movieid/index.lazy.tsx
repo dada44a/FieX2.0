@@ -20,61 +20,67 @@ export const Skeleton: React.FC = () => {
 
 
 function RouteComponent() {
-  const { movieid } = Route.useParams()
+  const { movieid } = Route.useParams();
   const [tabs, setTabs] = useState(1);
 
-  const { data, isLoading, error } = useQuery(
-    {
-      queryKey: ['movie'],
-      queryFn: () => fetch(`http://localhost:4000/api/movies/next-3-days`).then(res => res.json())
-    }
-  );
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['movie', movieid],
+    queryFn: () =>
+      fetch(`http://localhost:4000/api/shows/${movieid}/next-three`).then(res => res.json()),
+  });
 
-  console.log(data)
-  const renderCubes = (cubeNumber: number, count: number) => {
-    return Array.from({ length: count }).map((_, idx) => (
-      <div key={idx} className='flex flex-col items-center justify-center w-[200px] h-[100px] rounded-lg bg-primary'>
-        <h3>12:00 PM</h3>
-        <p>Cube {cubeNumber}</p>
-      </div>
-    ));
-  };
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error loading movie data</div>;
+
+  // Get dates from the shows object
+  const showDates = data?.shows ? Object.keys(data.shows) : [];
 
   return (
     <div className="min-h-screen p-4">
-
       {/* Movie Info Section */}
       <Suspense fallback={<div>Loading movie info...</div>}>
-        <MovieInfo />
+        <MovieInfo movie={data?.movieDetails} />
       </Suspense>
 
-      <div className='mb-50'>
+      <div className="mb-50">
         {/* Tabs */}
         <div className="tabs tabs-border">
-          <input type="radio" name="my_tabs_2" className="tab" aria-label="Tab 1" defaultChecked onClick={() => setTabs(1)} />
-          <input type="radio" name="my_tabs_2" className="tab" aria-label="Tab 2" onClick={() => setTabs(2)} />
-          <input type="radio" name="my_tabs_2" className="tab" aria-label="Tab 3" onClick={() => setTabs(3)} />
+          {showDates.map((date, idx) => (
+            <input
+              key={date}
+              type="radio"
+              name="my_tabs_2"
+              className="tab"
+              aria-label={`Tab ${idx + 1}`}
+              defaultChecked={idx === 0}
+              onClick={() => setTabs(idx + 1)}
+            />
+          ))}
         </div>
 
         {/* Tab Content */}
         <div id="content" className="mt-3 p-4 flex flex-wrap gap-4">
-          {tabs === 1 &&
-            <Suspense fallback={<Skeleton />}>
-              {renderCubes(1, 20)}
-            </Suspense>
-          }
-          {tabs === 2 &&
-            <Suspense fallback={<Skeleton />}>
-              {renderCubes(2, 5)}
-            </Suspense>
-          }
-          {tabs === 3 &&
-            <Suspense fallback={<Skeleton />}>
-              {renderCubes(3, 5)}
-            </Suspense>
-          }
+          {showDates.map((date, idx) => {
+            if (tabs !== idx + 1) return null;
+
+            const showsForDate = data.shows[date];
+            return (
+              <Suspense key={date} fallback={<Skeleton />}>
+                {showsForDate.map((show:any) => (
+                  <div
+                    key={show.showId}
+                    className="flex flex-col items-center justify-center w-[200px] h-[100px] rounded-lg bg-primary text-white"
+                  >
+                    <h3>{show.showDate}</h3>
+                    <p>{show.title}</p>
+                    <small>Screen {show.screenId}</small>
+                  </div>
+                ))}
+              </Suspense>
+            );
+          })}
         </div>
       </div>
     </div>
-  )
+  );
 }

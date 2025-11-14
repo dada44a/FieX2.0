@@ -1,14 +1,4 @@
-const movie = {
-  id: 1,
-  title: "The Great Adventure",
-  genre: "Action",
-  releaseDate: "2025-11-15",
-  description:
-    "An epic journey of courage and friendship, set in breathtaking landscapes.",
-  imageLink: "/placeholder-poster.jpg", // use a local image or placeholder URL
-};
-
-export default function movie_info() {
+export default function movie_info({movie}:{movie:any}) {
   return (
      <div className="grid grid-cols-1 lg:grid-cols-3 h-[500px] gap-4 my-20">
             {/* Poster */}
