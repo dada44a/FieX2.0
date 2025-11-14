@@ -36,8 +36,6 @@ showRoutes.get('/', async (c) => {
         };
       })
     );
-
-    console.log("Fetched shows:", responseData);
     return c.json({ message: 'List of shows', data: responseData });
   } catch (error: any) {
     return c.json({ message: 'Internal Server Error', error: error.message }, 500);
@@ -63,44 +61,80 @@ const checkerDateTime = async (db: any, screenId: number, showDate: string, show
 
 //? Create a new show
 showRoutes.post("/", async (c) => {
-    try {
-        const data = await c.req.json();
-        const { movieId, screenId, showDate, showTime } = data;
-        if (!movieId || !screenId || !showDate || !showTime) {
-            return c.json({ error: "All fields are required" }, 400);
-        }
+  console.log("📥 Incoming POST /shows");
 
-        const db = connectDb();
+  try {
+    const body = await c.req.json().catch((e) => {
+      console.log("❌ Could not parse body:", e);
+      return null;
+    });
 
-        // ✅ Check for duplicates
-        const alreadyExists = await checkerDateTime(db,screenId, showDate, showTime);
-        console.log("Checking for existing show:", alreadyExists);
-        if (alreadyExists!== null) {
-            return c.json(
-                { message: "Show with the same screen, date, and time already exists" },
-                400
-            );
-        }
+    console.log("🧪 Parsed body:", body);
 
-        // ✅ Insert safely (Drizzle returns an array)
-        const inserted = await db
-            .insert(shows)
-            .values({
-                movieId,
-                screenId,
-                showDate,
-                showTime,
-            });
-
-        return c.json(
-            { message: "Show created successfully", show: inserted[0] },
-            201
-        );
-    } catch (err: any) {
-        console.error("❌ Error adding show:", err);
-        return c.json({ message: "Internal Server Error", error: err.message }, 500);
+    if (!body) {
+      return c.json({ error: "Invalid JSON body" }, 400);
     }
+
+    const { movieId, screenId, showDate, showTime } = body;
+
+    if (!movieId || !screenId || !showDate || !showTime) {
+      console.log("❌ Missing fields:", body);
+      return c.json({ error: "All fields are required" }, 400);
+    }
+
+    const db = connectDb();
+    console.log("🗄️ DB Connected!");
+
+    console.log("🔎 Checking existing show...");
+    const existingShow = await db
+      .select()
+      .from(shows)
+      .where(
+        and(
+          eq(shows.screenId, screenId),
+          eq(shows.showDate, showDate),
+          eq(shows.showTime, showTime)
+        )
+      )
+      .execute();
+
+    console.log("Result existingShow:", existingShow);
+
+    if (existingShow.length > 0) {
+      console.log("❌ Duplicate show detected.");
+      return c.json(
+        { message: "Show with same screen, date & time already exists" },
+        400
+      );
+    }
+
+    console.log("🟢 No duplicate. Inserting...");
+
+    const inserted = await db
+      .insert(shows)
+      .values({
+        movieId,
+        screenId,
+        showDate,
+        showTime,
+      })
+      .returning();
+
+    console.log("✅ Inserted row:", inserted);
+
+    return c.json(
+      { message: "Show created successfully", show: inserted[0] },
+      201
+    );
+  } catch (err: any) {
+    console.error("🔥 INTERNAL ERROR:", err);
+    return c.json(
+      { message: "Internal Server Error", error: err.message },
+      500
+    );
+  }
 });
+
 
 
 

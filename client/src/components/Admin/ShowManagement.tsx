@@ -1,12 +1,8 @@
-import React, { useState } from "react";
-import { useForm } from "@tanstack/react-form";
+import React, { useEffect, useState, useRef } from "react";
 import { useAddData, useEditData } from "@/hooks/useAddData";
-import { useQuery } from "@tanstack/react-query";
 import { LoadingTable } from "../loadingtable";
 
-
 const BASE_URL = "http://localhost:4000";
-
 
 interface Show {
   id: number;
@@ -21,11 +17,22 @@ interface Show {
 }
 
 const ShowManagement: React.FC = () => {
+
   const add = useAddData();
   const edit = useEditData();
-  const [selectedRow, setSelectedRow] = useState<Show | null>(null);
 
-  const dialogRef = React.useRef<HTMLDialogElement>(null);
+  const [shows, setShows] = useState<Show[]>([]);
+  const [movies, setMovies] = useState<any[]>([]);
+  const [screens, setScreens] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [formValues, setFormValues] = useState({
+    movieId: "",
+    screenId: "",
+    showDate: "",
+    showTime: "",
+  });
+
+  const [selectedRow, setSelectedRow] = useState<Show | null>(null);
   const [editData, setEditData] = useState({
     movieId: "",
     screenId: "",
@@ -33,76 +40,71 @@ const ShowManagement: React.FC = () => {
     showTime: "",
   });
 
-  const { data, isLoading, error, isError } = useQuery({
-    queryKey: ['movies', 'screens'],
-    queryFn: async () => {
-      const [moviesRes, screensRes] = await Promise.all([
-        fetch(`${BASE_URL}/api/movies`),
-        fetch(`${BASE_URL}/api/screens`),
-      ]);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
-      if (!moviesRes.ok) throw new Error('Failed to fetch movies');
-      if (!screensRes.ok) throw new Error('Failed to fetch screens');
+  // --- Fetch movies, screens, shows ---
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [moviesRes, screensRes, showsRes] = await Promise.all([
+          fetch(`${BASE_URL}/api/movies`),
+          fetch(`${BASE_URL}/api/screens`),
+          fetch(`${BASE_URL}/api/shows`),
+        ]);
 
-      const [moviesData, screensData] = await Promise.all([
-        moviesRes.json(),
-        screensRes.json(),
-      ]);
-      return {
-        movies: Array.isArray(moviesData.data) ? moviesData.data : [],
-        screens: Array.isArray(screensData.data) ? screensData.data : [],
-      };
-    },
-  });
-
-  const { data: showsData, isLoading: isLoadingShows } = useQuery({
-    queryKey: ['shows'],
-    queryFn: async () => {
-      const res = await fetch(`${BASE_URL}/api/shows`);
-      if (!res.ok) throw new Error('Failed to fetch shows');
-      const data = await res.json();
-      return Array.isArray(data.data) ? data.data : [];
-    },
-  });
-
-  const movies = data?.movies ?? [];
-  const screens = data?.screens ?? [];
-  const shows = showsData ?? [];
-
-  // --- Add Show Form ---
-  const form = useForm({
-    defaultValues: {
-      movieId: "",
-      screenId: "",
-      showDate: "",
-      showTime: "",
-    },
-    onSubmit: (values) => {
-      add.mutateAsync(
-        {
-          link: "/api/shows",
-          datas: {
-            movieId: Number(values.value.movieId),
-            screenId: Number(values.value.screenId),
-            showDate: values.value.showDate,
-            showTime: values.value.showTime,
-          },
-          queryKey: ['shows'],
-        },
-        {
-          onSuccess: async () => {
-            form.reset();
-            alert("Show added successfully!");
-          },
-          onError: (error: any) => {
-            alert(`Error adding show: ${error.message}`);
-          },
+        if (!moviesRes.ok || !screensRes.ok || !showsRes.ok) {
+          throw new Error("Failed to fetch data");
         }
-      );
-    },
-  });
 
-  // --- Modal Handlers ---
+        const [moviesData, screensData, showsData] = await Promise.all([
+          moviesRes.json(),
+          screensRes.json(),
+          showsRes.json(),
+        ]);
+
+        setMovies(Array.isArray(moviesData.data) ? moviesData.data : []);
+        setScreens(Array.isArray(screensData.data) ? screensData.data : []);
+        setShows(Array.isArray(showsData.data) ? showsData.data : []);
+      } catch (err) {
+        console.error(err);
+        alert("Failed to load data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // --- Add Show Handler ---
+  const handleAddShow = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!formValues.movieId || !formValues.screenId) {
+      alert("Please select movie and screen");
+      return;
+    }
+
+    try {
+      await add.mutateAsync({
+        link: "/api/shows",
+        datas: {
+          movieId: Number(formValues.movieId),
+          screenId: Number(formValues.screenId),
+          showDate: formValues.showDate,
+          showTime: formValues.showTime,
+        },
+        queryKey: ["shows"],
+      });
+
+      setFormValues({ movieId: "", screenId: "", showDate: "", showTime: "" });
+      alert("Show added successfully!");
+    } catch (err: any) {
+      alert(`Error adding show: ${err.message}`);
+    }
+  };
+
+  // --- Edit Modal Handlers ---
   const openDialog = (show: Show) => {
     setSelectedRow(show);
     setEditData({
@@ -122,16 +124,22 @@ const ShowManagement: React.FC = () => {
   const handleEdit = async () => {
     if (!selectedRow) return;
 
-    await edit.mutateAsync({
-      link: `/api/shows/${selectedRow.id}`,
-      datas: {
-        movieId: Number(editData.movieId),
-        screenId: Number(editData.screenId),
-        showDate: editData.showDate,
-        showTime: editData.showTime,
-      },
-      queryKey: ['shows'],
-    });
+    try {
+      await edit.mutateAsync({
+        link: `/api/shows/${selectedRow.id}`,
+        datas: {
+          movieId: Number(editData.movieId),
+          screenId: Number(editData.screenId),
+          showDate: editData.showDate,
+          showTime: editData.showTime,
+        },
+        queryKey: ["shows"],
+      });
+      alert("Show updated successfully!");
+      closeDialog();
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   const handleDelete = async () => {
@@ -142,7 +150,6 @@ const ShowManagement: React.FC = () => {
       const res = await fetch(`${BASE_URL}/api/shows/${selectedRow.id}`, {
         method: "DELETE",
       });
-
       if (!res.ok) throw new Error("Failed to delete show");
 
       alert("Show deleted successfully!");
@@ -152,88 +159,60 @@ const ShowManagement: React.FC = () => {
     }
   };
 
-  if (isLoading) {
-
-    return (
-      <>
-        {/* Add Show Form */}
-        < div className="p-5 shadow-sm" >
-          <form onSubmit={form.handleSubmit} className="space-y-4">
-            <h2 className="font-bold text-lg">Add New Show</h2>
-            <div className="flex flex-wrap gap-4 items-center">
-              {/* Movie */}
-              <form.Field name="movieId">
-                {(field) => (
-                  <select
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    className="select select-bordered"
-                  >
-                    <option value="">Select Movie</option>
-                    {movies.map((m: any) => (
-                      <option key={m.id} value={m.id}>
-                        {m.title}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </form.Field>
-
-              {/* Screen */}
-              <form.Field name="screenId">
-                {(field) => (
-                  <select
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    className="select select-bordered"
-                  >
-                    <option value="">Select Screen</option>
-                    {screens.map((s: any) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} {s.price ? `(Rs ${s.price})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </form.Field>
-
-              {/* Date */}
-              <form.Field name="showDate">
-                {(field) => (
-                  <input
-                    type="date"
-                    className="input input-bordered"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                  />
-                )}
-              </form.Field>
-
-              {/* Time */}
-              <form.Field name="showTime">
-                {(field) => (
-                  <input
-                    type="time"
-                    className="input input-bordered"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                  />
-                )}
-              </form.Field>
-
-              <button type="submit" className="btn btn-primary">
-                Add Show
-              </button>
-            </div>
-          </form>
-        </div >
-        <LoadingTable wantToShow={false} />
-      </>
-    )
-  }
+  if (loading) return <LoadingTable wantToShow={false} />;
 
   return (
-    <>
+    <div className="p-6 space-y-6">
+      {/* Add Show Form */}
+      <div className="p-5 shadow-sm">
+        <h2 className="font-bold text-lg mb-4">Add New Show</h2>
+        <form onSubmit={handleAddShow} className="flex flex-wrap gap-4 items-center">
+          <select
+            value={formValues.movieId}
+            onChange={(e) => setFormValues({ ...formValues, movieId: e.target.value })}
+            className="select select-bordered"
+          >
+            <option value="">Select Movie</option>
+            {movies.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.title}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={formValues.screenId}
+            onChange={(e) => setFormValues({ ...formValues, screenId: e.target.value })}
+            className="select select-bordered"
+          >
+            <option value="">Select Screen</option>
+            {screens.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} {s.price ? `(Rs ${s.price})` : ""}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="date"
+            value={formValues.showDate}
+            onChange={(e) => setFormValues({ ...formValues, showDate: e.target.value })}
+            className="input input-bordered"
+          />
+
+          <input
+            type="time"
+            value={formValues.showTime}
+            onChange={(e) => setFormValues({ ...formValues, showTime: e.target.value })}
+            className="input input-bordered"
+          />
+
+          <button type="submit" className="btn btn-primary">
+            Add Show
+          </button>
+        </form>
+      </div>
+
       {/* Edit Modal */}
       <dialog ref={dialogRef} className="modal">
         <div className="modal-box space-y-3">
@@ -243,12 +222,10 @@ const ShowManagement: React.FC = () => {
             <select
               className="select select-bordered"
               value={editData.movieId}
-              onChange={(e) =>
-                setEditData({ ...editData, movieId: e.target.value })
-              }
+              onChange={(e) => setEditData({ ...editData, movieId: e.target.value })}
             >
               <option value="">Select Movie</option>
-              {movies.map((m: any) => (
+              {movies.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.title}
                 </option>
@@ -258,12 +235,10 @@ const ShowManagement: React.FC = () => {
             <select
               className="select select-bordered"
               value={editData.screenId}
-              onChange={(e) =>
-                setEditData({ ...editData, screenId: e.target.value })
-              }
+              onChange={(e) => setEditData({ ...editData, screenId: e.target.value })}
             >
               <option value="">Select Screen</option>
-              {screens.map((s: any) => (
+              {screens.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name} {s.price ? `(Rs ${s.price})` : ""}
                 </option>
@@ -274,18 +249,14 @@ const ShowManagement: React.FC = () => {
               type="date"
               className="input input-bordered"
               value={editData.showDate}
-              onChange={(e) =>
-                setEditData({ ...editData, showDate: e.target.value })
-              }
+              onChange={(e) => setEditData({ ...editData, showDate: e.target.value })}
             />
 
             <input
               type="time"
               className="input input-bordered"
               value={editData.showTime}
-              onChange={(e) =>
-                setEditData({ ...editData, showTime: e.target.value })
-              }
+              onChange={(e) => setEditData({ ...editData, showTime: e.target.value })}
             />
           </div>
 
@@ -303,133 +274,48 @@ const ShowManagement: React.FC = () => {
         </div>
       </dialog>
 
-      {/* Main Page */}
-      <div className="p-6 space-y-6">
-        {/* Add Show Form */}
-        <div className="p-5 shadow-sm">
-          <form onSubmit={form.handleSubmit} className="space-y-4">
-            <h2 className="font-bold text-lg">Add New Show</h2>
-            <div className="flex flex-wrap gap-4 items-center">
-              {/* Movie */}
-              <form.Field name="movieId">
-                {(field) => (
-                  <select
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    className="select select-bordered"
-                  >
-                    <option value="">Select Movie</option>
-                    {movies.map((m: any) => (
-                      <option key={m.id} value={m.id}>
-                        {m.title}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </form.Field>
-
-              {/* Screen */}
-              <form.Field name="screenId">
-                {(field) => (
-                  <select
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    className="select select-bordered"
-                  >
-                    <option value="">Select Screen</option>
-                    {screens.map((s: any) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} {s.price ? `(Rs ${s.price})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </form.Field>
-
-              {/* Date */}
-              <form.Field name="showDate">
-                {(field) => (
-                  <input
-                    type="date"
-                    className="input input-bordered"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                  />
-                )}
-              </form.Field>
-
-              {/* Time */}
-              <form.Field name="showTime">
-                {(field) => (
-                  <input
-                    type="time"
-                    className="input input-bordered"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                  />
-                )}
-              </form.Field>
-
-              <button type="submit" className="btn btn-primary">
-                Add Show
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Shows Table */}
-        <div className="overflow-x-auto">
-          <table className="table w-full">
-            <thead className="">
+      {/* Shows Table */}
+      <div className="overflow-x-auto">
+        <table className="table w-full">
+          <thead>
+            <tr>
+              <th>Movie</th>
+              <th>Screen</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Admin</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {shows.length === 0 ? (
               <tr>
-                <th>Movie</th>
-                <th>Screen</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Admin</th>
-                <th>Action</th>
+                <td colSpan={6} className="text-center p-4">
+                  No shows available.
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {isLoadingShows ? (
-                <tr>
-                  <td colSpan={6} className="text-center p-4">
-                    Loading...
+            ) : (
+              shows.map((show) => (
+                <tr key={show.id}>
+                  <td>{show.movieTitle || "—"}</td>
+                  <td>
+                    {show.screenName} {show.screenPrice ? `(Rs ${show.screenPrice})` : ""}
+                  </td>
+                  <td>{show.showDate}</td>
+                  <td>{show.showTime}</td>
+                  <td>{show.adminEmail || "—"}</td>
+                  <td className="flex gap-2">
+                    <button onClick={() => openDialog(show)} className="btn btn-sm btn-neutral">
+                      Edit
+                    </button>
                   </td>
                 </tr>
-              ) :  shows.length === 0? (
-                <tr>
-                  <td colSpan={6} className="text-center p-4">
-                    {isError || `No shows available. or ${error}`}
-                  </td>
-                </tr>
-              ) : (
-                shows.map((show: any) => (
-                  <tr key={show.id}>
-                    <td>{show.movieTitle || "—"}</td>
-                    <td>
-                      {show.screenName}{" "}
-                      {show.screenPrice ? `(Rs ${show.screenPrice})` : ""}
-                    </td>
-                    <td>{show.showDate}</td>
-                    <td>{show.showTime}</td>
-                    <td>{show.adminEmail || "—"}</td>
-                    <td className="flex gap-2">
-                      <button
-                        onClick={() => openDialog(show)}
-                        className="btn btn-sm btn-neutral"
-                      >
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
-    </>
+    </div>
   );
 };
 
