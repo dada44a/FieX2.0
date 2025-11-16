@@ -89,11 +89,11 @@ export const showSeats = pgTable("show_seats", {
     showId: integer("show_id")
         .notNull()
         .references(() => shows.id, { onDelete: "cascade" }),
-    seatId: integer("seat_id")
-        .notNull()
-        .references(() => seats.id, { onDelete: "cascade" }),
     screenId: integer("screen_id")
         .notNull()
-        .references(() => screens.id, { onDelete: "cascade" }),    
+        .references(() => screens.id, { onDelete: "cascade" }),
+    row: varchar("rows", { length: 10 }).notNull(),
+    column: integer("columns").notNull(),    
     isBooked: boolean("is_booked").default(false).notNull(),
+
 })

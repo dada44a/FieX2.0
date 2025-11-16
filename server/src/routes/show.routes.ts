@@ -8,9 +8,6 @@ import { inngest } from "../inngest/index.js";
 
 const showRoutes = new Hono();
 
-//  -------------------Helper Function --------------------
-
-// get all shows
 showRoutes.get('/', async (c) => {
   try {
     const db = connectDb();
@@ -42,8 +39,6 @@ showRoutes.get('/', async (c) => {
     return c.json({ message: 'Internal Server Error', error: error.message }, 500);
   }
 });
-
-
 
 //? Create a new show
 showRoutes.post("/", async (c) => {
@@ -124,7 +119,6 @@ showRoutes.post("/", async (c) => {
   }
 });
 
-
 showRoutes.get("/:id/next-three", async (c) => {
   try {
     const db = connectDb();
@@ -183,9 +177,6 @@ showRoutes.get("/:id/next-three", async (c) => {
     return c.json({ message: "Internal server error", error: String(err) }, 500);
   }
 });
-
-
-
 
 showRoutes.get('/:id', async (c) => {
   const { id } = c.req.param();
