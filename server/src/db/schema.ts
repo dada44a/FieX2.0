@@ -1,3 +1,4 @@
+import { is } from "drizzle-orm"
 import {
     pgTable,
     serial,
@@ -81,4 +82,18 @@ export const ticketSeats = pgTable("ticket_seats", {
     seatId: integer("seat_id")
         .notNull()
         .references(() => seats.id, { onDelete: "cascade" }),
+})
+
+export const showSeats = pgTable("show_seats", {
+    id: serial("id").primaryKey(),
+    showId: integer("show_id")
+        .notNull()
+        .references(() => shows.id, { onDelete: "cascade" }),
+    seatId: integer("seat_id")
+        .notNull()
+        .references(() => seats.id, { onDelete: "cascade" }),
+    screenId: integer("screen_id")
+        .notNull()
+        .references(() => screens.id, { onDelete: "cascade" }),    
+    isBooked: boolean("is_booked").default(false).notNull(),
 })

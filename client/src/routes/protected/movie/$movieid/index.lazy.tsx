@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { createLazyFileRoute, useParams } from '@tanstack/react-router'
+import { createLazyFileRoute} from '@tanstack/react-router'
 import React from 'react';
 import { Suspense, useState } from 'react';
 const MovieInfo = React.lazy(() => import('@/components/less_use/movie_info'));

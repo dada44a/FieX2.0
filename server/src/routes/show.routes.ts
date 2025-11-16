@@ -3,6 +3,7 @@ import { connectDb } from "../db/init.js";
 import { movies, screens, shows, users } from "../db/schema.js";
 import { and, eq, gte, lte } from "drizzle-orm/sql/expressions/conditions";
 import type { Show } from "../types.js";
+import { inngest } from "../inngest/index.js";
 
 
 const showRoutes = new Hono();
@@ -43,21 +44,6 @@ showRoutes.get('/', async (c) => {
 });
 
 
-
-
-const checkerDateTime = async (db: any, screenId: number, showDate: string, showTime: string) => {
-    const existingShow = await db.select().from(shows).where(
-        and(
-            eq(shows.screenId, screenId),
-            eq(shows.showDate, showDate),
-            eq(shows.showTime, showTime)
-        )
-    )
-    if (existingShow.length > 0) {
-        return existingShow[0];
-    }
-    return null;
-}
 
 //? Create a new show
 showRoutes.post("/", async (c) => {
@@ -101,7 +87,7 @@ showRoutes.post("/", async (c) => {
     console.log("Result existingShow:", existingShow);
 
     if (existingShow.length > 0) {
-      console.log("❌ Duplicate show detected.");
+      console.log(" Duplicate show detected.");
       return c.json(
         { message: "Show with same screen, date & time already exists" },
         400
@@ -122,8 +108,17 @@ showRoutes.post("/", async (c) => {
 
     console.log("✅ Inserted row:", inserted);
 
+    try {
+      await inngest.send({
+        name: "show/show-seats",
+        data: { showId: inserted[0].id, screenId },
+      });
+    } catch (e) {
+      console.error("Failed to send Inngest event:", e);
+    }
+
     return c.json(
-      { message: "Show created successfully", show: inserted[0] },
+      { message: "Show created successfully" },
       201
     );
   } catch (err: any) {
@@ -178,14 +173,14 @@ showRoutes.get("/:id/next-three", async (c) => {
 
     // Group shows by date
     const grouped: Record<string, typeof rows[0][]> = {};
-    rows.forEach((row:any) => {
+    rows.forEach((row: any) => {
       const dateStr = row.showDate instanceof Date ? formatDate(row.showDate) : row.showDate;
       if (!grouped[dateStr]) grouped[dateStr] = [];
       grouped[dateStr].push(row);
     });
 
     return c.json({
-      movieDetails: { id, title, description, imageLink, genre  },
+      movieDetails: { id, title, description, imageLink, genre },
       shows: grouped
     });
 
@@ -199,50 +194,50 @@ showRoutes.get("/:id/next-three", async (c) => {
 
 
 showRoutes.get('/:id', async (c) => {
-    const { id } = c.req.param();
-    try {
-        const db = connectDb();
-        const show: Show = await db.select().from(shows).where(eq(shows.id, Number(id)));
-        if (!show) {
-            return c.json({ message: `Show with ID: ${id} not found` }, 404);
-        }
-        return c.json({ message: `Get show with ID: ${id}`, show });
+  const { id } = c.req.param();
+  try {
+    const db = connectDb();
+    const show: Show = await db.select().from(shows).where(eq(shows.id, Number(id)));
+    if (!show) {
+      return c.json({ message: `Show with ID: ${id} not found` }, 404);
     }
-    catch (err: any) {
-        return c.json({ message: 'Internal Server Error', error: err.message }, 500);
-    }
+    return c.json({ message: `Get show with ID: ${id}`, show });
+  }
+  catch (err: any) {
+    return c.json({ message: 'Internal Server Error', error: err.message }, 500);
+  }
 });
 
 
 
 showRoutes.put('/:id', async (c) => {
-    const { id } = c.req.param();
-    const data = await c.req.json();
-    try {
-        const db = connectDb();
+  const { id } = c.req.param();
+  const data = await c.req.json();
+  try {
+    const db = connectDb();
 
-      
 
-        const updatedShow = await db.update(shows).set(data).where(eq(shows.id, Number(id))).execute();
-        return c.json({ message: `Update show with ID: ${id}`, show: updatedShow });
-    }
-    catch (err: any) {
-        return c.json({ message: 'Internal Server Error', error: err.message }, 500);
-    }
+
+    const updatedShow = await db.update(shows).set(data).where(eq(shows.id, Number(id))).execute();
+    return c.json({ message: `Update show with ID: ${id}`, show: updatedShow });
+  }
+  catch (err: any) {
+    return c.json({ message: 'Internal Server Error', error: err.message }, 500);
+  }
 });
 
 showRoutes.delete('/:id', async (c) => {
-    const { id } = c.req.param();
-    try {
-        const db = connectDb();
+  const { id } = c.req.param();
+  try {
+    const db = connectDb();
 
-        await db.delete(shows).where(eq(shows.id, Number(id)));
-        return c.json({ message: `Delete show with ID: ${id}` });
+    await db.delete(shows).where(eq(shows.id, Number(id)));
+    return c.json({ message: `Delete show with ID: ${id}` });
 
-    }
-    catch (err: any) {
-        return c.json({ message: 'Internal Server Error', error: err.message }, 500);
-    }
+  }
+  catch (err: any) {
+    return c.json({ message: 'Internal Server Error', error: err.message }, 500);
+  }
 
 });
 
