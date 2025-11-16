@@ -51,7 +51,7 @@ showRoutes.post("/", async (c) => {
 
   try {
     const body = await c.req.json().catch((e) => {
-      console.log("❌ Could not parse body:", e);
+      console.log("Could not parse body:", e);
       return null;
     });
 
@@ -64,14 +64,10 @@ showRoutes.post("/", async (c) => {
     const { movieId, screenId, showDate, showTime } = body;
 
     if (!movieId || !screenId || !showDate || !showTime) {
-      console.log("❌ Missing fields:", body);
       return c.json({ error: "All fields are required" }, 400);
     }
 
     const db = connectDb();
-    console.log("🗄️ DB Connected!");
-
-    console.log("🔎 Checking existing show...");
     const existingShow = await db
       .select()
       .from(shows)
@@ -93,8 +89,6 @@ showRoutes.post("/", async (c) => {
         400
       );
     }
-
-    console.log("🟢 No duplicate. Inserting...");
 
     const inserted = await db
       .insert(shows)
