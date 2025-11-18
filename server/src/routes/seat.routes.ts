@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { connectDb } from "../db/init.js";
-import { screens, seats } from "../db/schema.js";
+import { screens, seats, showSeats } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import type { NewSeat, Screens, Seat } from "../types.js";
 
@@ -15,6 +15,21 @@ seatRoutes.get('/', async (c) => {
   } catch (error: any) {
     return c.json({ message: 'Error fetching seats', error: error.message }, 500);
   }
+});
+
+seatRoutes.get("/:id", async (c) => {
+  const { id } = c.req.param();
+  try {
+    const db = connectDb();
+    const seat = await db.select().from(showSeats).where(eq(showSeats.showId, Number(id)));
+    if (seat.length === 0) {
+      return c.json({ message: `Seat with ID ${id} not found` }, 404);
+    }
+    return c.json({ message: `Details of seat with ID ${id}`, data: seat });
+  } catch (error: any) {
+    return c.json({ message: 'Error fetching seat', error: error.message }, 500);
+  }
+
 });
 
 // ? create a new seat according to screenId

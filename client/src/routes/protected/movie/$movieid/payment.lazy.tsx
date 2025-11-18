@@ -9,51 +9,87 @@ export const Route = createLazyFileRoute('/protected/movie/$movieid/payment')({
   component: RouteComponent,
 })
 
+export const SeatSkeleton: React.FC = React.memo(() => {
+  return (
+    <div className='flex flex-col gap-5'>
+      <div className='flex gap-5 justify-center'>
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+      </div>
+      <div className='flex gap-5 justify-center'>
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+      </div>
+      <div className='flex gap-5 justify-center'>
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+      </div>
+      <div className='flex gap-5 justify-center'>
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+      </div>
+    </div>
+  );
+})
+
 function RouteComponent() {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const { movieid } = Route.useParams();
 
   const handlepay = async () => {
-  const body = {
-    name,
-    email,
-    phone,
-    amount: 300,   // ✔ convert Rs 300 → 30000 paisa
-    purchase_order_name: "Movie Ticket"
-  };
+    const body = {
+      name,
+      email,
+      phone,
+      amount: 300,   // ✔ convert Rs 300 → 30000 paisa
+      purchase_order_name: "Movie Ticket"
+    };
 
-  try {
-    const res = await fetch(`${import.meta.env.VITE_API_LINK}/initiate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_LINK}/initiate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.payment_url) {
-      window.location.href = data.payment_url; // ✔ redirect works now
-    } else {
-      alert("Failed to initiate payment");
-      console.log(data);
+      if (data.payment_url) {
+        window.location.href = data.payment_url; // ✔ redirect works now
+      } else {
+        alert("Failed to initiate payment");
+        console.log(data);
+      }
+
+    } catch (err) {
+      console.error(err);
+      alert("Error contacting payment server");
     }
-
-  } catch (err) {
-    console.error(err);
-    alert("Error contacting payment server");
-  }
-};
+  };
 
 
   return (
     <div className="min-h-screen p-4 flex items-center justify-center">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
 
         {/* SEAT LAYOUT */}
-        <Suspense fallback={<div className="skeleton w-[400px] h-[300px]" />}>
-          <SeatSelection />
+        <Suspense fallback={<SeatSkeleton />}>
+          <SeatSelection showId={Number(movieid)} />
         </Suspense>
 
         {/* PAYMENT CARD */}

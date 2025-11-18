@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { createLazyFileRoute} from '@tanstack/react-router'
+import { createLazyFileRoute, Link } from '@tanstack/react-router'
 import React from 'react';
 import { Suspense, useState } from 'react';
 const MovieInfo = React.lazy(() => import('@/components/less_use/movie_info'));
@@ -66,14 +66,15 @@ function RouteComponent() {
             const showsForDate = data.shows[date];
             return (
               <Suspense key={date} fallback={<Skeleton />}>
-                {showsForDate.map((show:any) => (
+                {showsForDate.map((show: any) => (
                   <div
                     key={show.showId}
                     className="flex flex-col items-center justify-center w-[200px] h-[100px] rounded-lg bg-primary text-white"
                   >
-                    <h3>{show.showDate}</h3>
-                    <p>{show.title}</p>
-                    <small>Screen {show.screenId}</small>
+                    <Link to="/protected/movie/$movieid/payment" params={{ movieid: show.showId }} className='flex flex-col items-center'>
+                      <h3>{show.showDate}</h3>
+                      <small>Screen {show.screenId}</small>
+                    </Link>
                   </div>
                 ))}
               </Suspense>
