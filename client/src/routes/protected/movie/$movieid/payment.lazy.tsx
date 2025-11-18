@@ -50,6 +50,7 @@ function RouteComponent() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const { movieid } = Route.useParams();
+  const [showlist, setShowlist] = useState<Set<string>>(new Set());
 
   const handlepay = async () => {
     const body = {
@@ -82,14 +83,35 @@ function RouteComponent() {
     }
   };
 
+const addDataToShowList = (action: "add" | "remove", item: { row: string, column: number }) => {
+  // Create a clean, unique key string (e.g., "A-1", "B-5")
+  const key = `${item.row}-${item.column}`;
+
+  setShowlist(prev => {
+    // 1. Create a shallow copy of the previous Set
+    const copy = new Set(prev);
+
+    // 2. Add or delete the key string
+    if (action === "add") copy.add(key);
+    if (action === "remove") copy.delete(key);
+
+    // 3. Return the new Set object for React to re-render
+    return copy;
+  });
+};
+
+
 
   return (
     <div className="min-h-screen p-4 flex items-center justify-center">
+
+      <p>Selected Seats: **{Array.from(showlist).join(', ')}**</p>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
 
         {/* SEAT LAYOUT */}
         <Suspense fallback={<SeatSkeleton />}>
-          <SeatSelection showId={Number(movieid)} />
+          <SeatSelection showId={Number(movieid)} showListUpdate={addDataToShowList} />
         </Suspense>
 
         {/* PAYMENT CARD */}
