@@ -1,18 +1,18 @@
 import { Inngest } from "inngest";
 import { connectDb } from "../db/init.js";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { seats, shows, showSeats } from "../db/schema.js";
 
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "my-app" });
 
 const helloWorld = inngest.createFunction(
-    { id: "hello-world" },
-    { event: "test/hello.world" },
-    async ({ event, step }) => {
-        await step.sleep("wait-a-moment", "1s");
-        return { message: `Hello ${event.data.email}!` };
-    },
+  { id: "hello-world" },
+  { event: "test/hello.world" },
+  async ({ event, step }) => {
+    await step.sleep("wait-a-moment", "1s");
+    return { message: `Hello ${event.data.email}!` };
+  },
 );
 
 const showSeat = inngest.createFunction(
@@ -63,7 +63,31 @@ const showSeat = inngest.createFunction(
   }
 );
 
+const inActiveSeats = inngest.createFunction(
+  { id: "inactive-seats" },
+  { event: "booking/inactive-seats" },
+  async ({ event }) => {
+    try {
+      const db = connectDb();
+      const { id, userId } = event.data;
+
+      const result = await db
+        .update(showSeats)
+        .set({
+          status: "SELECTED",
+          booked_by: userId,
+        })
+        .where(eq(showSeats.id, id))
+        .execute();
+
+      return { success: true, updated: result.rowCount };
+    } catch (err: any) {
+      console.error("Failed to mark seats as inactive:", err);
+      return { success: false, error: err.message };
+    }
+  }
+);
 
 
 // Create an empty array where we'll export future Inngest functions
-export const functions = [helloWorld, showSeat];
+export const functions = [helloWorld, showSeat, inActiveSeats];

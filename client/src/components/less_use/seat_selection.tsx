@@ -1,137 +1,62 @@
-import { useState, useEffect } from "react";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-import { SeatSkeleton } from "@/routes/protected/movie/$movieid/payment.lazy";
 
 type Seat = {
-    id: number;
-    showId: number;
-    screenId: number;
-    row: string; // A, B, C...
-    column: number;
-    isBooked: boolean;
+  id: number;
+  row: string;
+  column: number;
+  isBooked: boolean;
+  screenId: number;
 };
-type SeatObject = { row: string, column: number };
 
+export default function SeatSelection({ showId }: { showId: number }) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["seats", showId],
+    queryFn: async () => {
+      const res = await fetch(`http://localhost:4000/api/seats/screen/${showId}`);
+      const json = await res.json();
+      return json.data as Seat[];
+    },
+    enabled: !!showId,
+  });
 
+  if (isLoading) return <p>Loading seats...</p>;
+  if (isError) return <p>Error loading seats</p>;
+  if (!data || data.length === 0) return <p>No seats found for this show</p>;
 
-export default function SeatSelection({ showId, showListUpdate }: { showId: number, showListUpdate?: (action: "add" | "remove", item: SeatObject) => void }) {
-    // ------------------ Fetch seats ------------------
-    const { data, isLoading, error } = useQuery({
-        queryKey: ["seats", showId],
-        queryFn: async () => {
-            const res = await axios.get(
-                `http://localhost:4000/api/seats/${showId}`
+  // Group seats by row and find total columns for that row
+  const seatsByRow: Record<string, number> = {};
+  data.forEach((seat) => {
+    if (!seatsByRow[seat.row] || seatsByRow[seat.row] < seat.column) {
+      seatsByRow[seat.row] = seat.column; // store max column number for that row
+    }
+  });
+
+  const rows = Object.keys(seatsByRow).sort();
+
+  return (
+    <div className="flex flex-col gap-2">
+      {rows.map((row) => (
+        <div key={row} className="flex gap-2">
+          {Array.from({ length: seatsByRow[row] }, (_, i) => {
+            const colNum = i + 1;
+            // find the seat object for this row & column to check booked
+            const seat = data.find((s) => s.row === row && s.column === colNum);
+            const isBooked = seat?.isBooked ?? false;
+
+            return (
+              <div
+                key={`${row}-${colNum}`}
+                className={`w-10 h-10 rounded-md flex items-center justify-center ${
+                  isBooked ? "bg-red-500 cursor-not-allowed" : "bg-green-400 hover:bg-green-500"
+                } text-white font-semibold`}
+              >
+                {row}-{colNum}
+              </div>
             );
-            return res.data.data as Seat[];
-        },
-    });
-
-    // ------------------ Local state for toggling ------------------
-    const [layout, setLayout] = useState<number[][]>([]);
-
-    // Convert API data → 2D grid
-    useEffect(() => {
-        if (!data) return;
-
-        // Find number of rows from letters (A, B, C...)
-        const rows = Math.max(...data.map((s) => s.row.charCodeAt(0) - 65)) + 1;
-
-        // Find max columns
-        const cols = Math.max(...data.map((s) => s.column));
-
-        // Build grid with default "0"
-        const grid = Array.from({ length: rows }, () =>
-            Array.from({ length: cols }, () => 0)
-        );
-
-        // Fill booked seats (2)
-        data.forEach((seat) => {
-            const r = seat.row.charCodeAt(0) - 65;
-            const c = seat.column - 1;
-            grid[r][c] = seat.isBooked ? 2 : 0;
-        });
-
-        setLayout(grid);
-    }, [data]);
-
-    // ------------------ Seat toggle logic ------------------
-    const toggleSeat = (row: number, col: number) => {
-        setLayout((prev) => {
-            const newSeats = prev.map((r) => [...r]);
-            if (newSeats[row][col] === 0) newSeats[row][col] = 1;
-            else if (newSeats[row][col] === 1) newSeats[row][col] = 0;
-            return newSeats;
-        });
-    };
-
-    // ------------------ Loading & Error ------------------
-    if (isLoading) return <SeatSkeleton />;
-    if (error) return <p>Failed to load seat data.</p>;
-
-    return (
-        <div>
-            <h2 className="text-2xl font-semibold mb-4">Select Your Seats</h2>
-
-            <div className="grid gap-2 justify-center">
-                {layout.map((row, rowIndex) => (
-                    <div key={rowIndex} className="flex gap-2 justify-center">
-                        {row.map((seat, colIndex) => {
-                            const seatLabel = `${String.fromCharCode(65 + rowIndex)}-${colIndex + 1}`;
-                            return (
-                                <div
-                                    key={colIndex}
-                                    className={`w-10 h-10 rounded-md cursor-pointer flex items-center justify-center
-                    ${seat === 0 ? "bg-accent hover:bg-green-500" : ""}
-                    ${seat === 1 ? "bg-warning" : ""}
-                    ${seat === 2 ? "bg-error cursor-not-allowed" : ""}
-                  `}
-                                    onClick={() => {
-                                        if (seat === 2) return; // seat is booked
-
-                                        const seatObj: SeatObject = {
-                                            row: String.fromCharCode(65 + rowIndex),
-                                            column: colIndex + 1,
-                                        };
-
-                                        if (seat === 0) {
-                                            // Seat is becoming selected → ADD
-                                            toggleSeat(rowIndex, colIndex);
-                                            // showListUpdate is now correctly typed and used
-                                            showListUpdate?.("add", seatObj);
-                                        } else if (seat === 1) {
-                                            // Seat is becoming unselected → REMOVE
-                                            toggleSeat(rowIndex, colIndex);
-                                            showListUpdate?.("remove", seatObj);
-                                        }
-                                    }}
-
-
-                                    title={seatLabel}
-                                >
-                                    {seatLabel}
-                                </div>
-                            );
-                        })}
-                    </div>
-                ))}
-            </div>
-
-            {/* Legends */}
-            <div className="flex gap-4 mt-4">
-                <div className="flex items-center gap-1">
-                    <div className="w-4 h-4 bg-accent rounded-sm"></div>
-                    <span>Available</span>
-                </div>
-                <div className="flex items-center gap-1">
-                    <div className="w-4 h-4 bg-warning rounded-sm"></div>
-                    <span>Selected</span>
-                </div>
-                <div className="flex items-center gap-1">
-                    <div className="w-4 h-4 bg-error rounded-sm"></div>
-                    <span>Booked</span>
-                </div>
-            </div>
+          })}
         </div>
-    );
+      ))}
+    </div>
+  );
 }

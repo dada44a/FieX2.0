@@ -8,8 +8,10 @@ import {
     boolean,
     date,
     time,
+    pgEnum,
 } from "drizzle-orm/pg-core"
 
+const seatStatus = pgEnum("seat_status", ["AVAILABLE", "SELECTED", "BOOKED"]);
 // ------------------ USERS ------------------
 export const users = pgTable("users", {
     id: serial("id").primaryKey(),
@@ -94,6 +96,6 @@ export const showSeats = pgTable("show_seats", {
         .references(() => screens.id, { onDelete: "cascade" }),
     row: varchar("rows", { length: 10 }).notNull(),
     column: integer("columns").notNull(),    
-    isBooked: boolean("is_booked").default(false).notNull(),
-
+    status: varchar("status", { length: 20 }).default("AVAILABLE").notNull(),
+    booked_by: varchar("booked_by", { length: 255 }),
 })

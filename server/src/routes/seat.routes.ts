@@ -3,6 +3,7 @@ import { connectDb } from "../db/init.js";
 import { screens, seats, showSeats } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import type { NewSeat, Screens, Seat } from "../types.js";
+import { inngest } from "../inngest/index.js";
 
 const seatRoutes = new Hono();
 
@@ -17,6 +18,20 @@ seatRoutes.get('/', async (c) => {
   }
 });
 
+seatRoutes.get('/screen/:id', async (c) => {
+  const { id } = c.req.param();
+  try {
+    const db = connectDb();
+    const seat = await db.select().from(seats).where(eq(seats.screenId, Number(id)));
+    if (seat.length === 0) {
+      return c.json({ message: `Seat with Screen ID ${id} not found` }, 404);
+    }
+    return c.json({ message: `Details of seat with Screen ID ${id}`, data: seat });
+  } catch (error: any) {
+    return c.json({ message: 'Error fetching seat', error: error.message }, 500);
+  }
+});
+
 seatRoutes.get("/:id", async (c) => {
   const { id } = c.req.param();
   try {
@@ -25,11 +40,46 @@ seatRoutes.get("/:id", async (c) => {
     if (seat.length === 0) {
       return c.json({ message: `Seat with ID ${id} not found` }, 404);
     }
+   const groupedSeats: Record<string, number[]> = {};
+    seat.forEach((s:any) => {
+      if (!groupedSeats[s.row]) {
+        groupedSeats[s.row] = [];
+      }
+      groupedSeats[s.row].push(s.column);
+    }); 
     return c.json({ message: `Details of seat with ID ${id}`, data: seat });
   } catch (error: any) {
     return c.json({ message: 'Error fetching seat', error: error.message }, 500);
   }
 
+});
+
+
+seatRoutes.put("/inactive/:id", async (c) => {
+  try {
+    const body = await c.req.json();
+    const userId = body.userId;
+        console.log("Incoming /inactive request:", body, "seatId:", c.req.param("id"));
+
+    if (!userId) {
+      return c.json({ message: "Missing userId" }, 400);
+    }
+
+    await inngest.send({
+      name: "booking/inactive-seats",
+      data: {
+        id: Number(c.req.param("id")),
+        userId,
+      },
+    });
+
+    return c.json({ message: "Seat set to inactive" }, 200);
+  } catch (error: any) {
+    return c.json(
+      { message: "Error marking seat inactive", error: error.message },
+      500
+    );
+  }
 });
 
 // ? create a new seat according to screenId
