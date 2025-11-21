@@ -31,7 +31,10 @@ const showSeat = inngest.createFunction(
         .where(eq(seats.screenId, screenId));
 
       if (!seatRows.length) {
-        return { success: false, error: "No seat layout found for this screen" };
+        return {
+          success: false,
+          error: "No seat layout found for this screen",
+        };
       }
 
       const showSeatsRows: any[] = [];
@@ -60,7 +63,7 @@ const showSeat = inngest.createFunction(
       console.error("Failed to create show seats:", err);
       return { success: false, error: err.message };
     }
-  }
+  },
 );
 
 const inActiveSeats = inngest.createFunction(
@@ -85,9 +88,43 @@ const inActiveSeats = inngest.createFunction(
       console.error("Failed to mark seats as inactive:", err);
       return { success: false, error: err.message };
     }
-  }
+  },
 );
 
+const clearSelectedSeats = inngest.createFunction(
+  { id: "clear-seats" },
+  { event: "booking/clear-seats" },
+  async ({ event }) => {
+    try {
+      const db = connectDb();
+      const { id, userId } = event.data;
+
+      const result = await db
+        .update(showSeats)
+        .set({
+          status: "AVAILABLE",
+          booked_by: null,
+        })
+        .where(
+          and(
+            eq(showSeats.showId, Number(id)),
+            eq(showSeats.booked_by, userId),
+          ),
+        )
+        .execute();
+
+      return { success: true, updated: result.rowCount };
+    } catch (err: any) {
+      console.error("Failed to mark seats as inactive:", err);
+      return { success: false, error: err.message };
+    }
+  },
+);
 
 // Create an empty array where we'll export future Inngest functions
-export const functions = [helloWorld, showSeat, inActiveSeats];
+export const functions = [
+  helloWorld,
+  showSeat,
+  inActiveSeats,
+  clearSelectedSeats,
+];
