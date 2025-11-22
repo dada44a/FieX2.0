@@ -131,6 +131,44 @@ seatRoutes.put("/clear/:id", async (c) => {
   }
 });
 
+seatRoutes.put("/booked", async (c) => {
+  try {
+    const {
+      id,
+      userId,
+      transaction_id,
+      mobile,
+      phone,
+      pidx,
+      showId,
+    } = await c.req.json();
+    if (
+      !id ||
+      !userId ||
+      !transaction_id ||
+      !mobile ||
+      !pidx
+    )
+      return c.json({ message: "Missing Value" });
+
+    await inngest.send({
+      name: "booking/book-seats",
+      data: {
+        id,
+        userId,
+        transaction_id,
+        mobile,
+        pidx,
+        showId,
+        phone
+      },
+    });
+
+    return c.json({ message: " Seats booked" }, 200);
+  } catch (e: any) {
+    c.json({ message: "Error marking seat inactive", error: e.message }, 500);
+  }
+});
 // ? create a new seat according to screenId
 seatRoutes.post("/:id", async (c) => {
   try {

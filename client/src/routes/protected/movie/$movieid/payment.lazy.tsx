@@ -170,6 +170,8 @@ function RouteComponent() {
       phone,
       amount: totalAmountPaisa, 
       purchase_order_name: `Movie Tickets (${seatLabels})`,
+      showId: Number(movieid),
+      customerId: userId,
       // You might also want to send userId and the selected seat IDs for the payment process
     };
 
@@ -235,13 +237,13 @@ function RouteComponent() {
           <div className='mb-6 p-4  border border-blue-300 rounded-lg shadow-md'>
             <h3 className='text-lg font-semibold text-accent mb-2'>Selected Seats Summary</h3>
             <p className='text-gray-700'>
-              **Selected Seats:** <span className="font-mono text-sm bg-blue-200 px-2 py-0.5 rounded">{seatLabels || 'None'}</span>
+              Selected Seats: <span className="font-mono text-sm bg-blue-200 px-2 py-0.5 rounded">{seatLabels || 'None'}</span>
             </p>
             <p className='text-gray-700'>
-              **Total Tickets:** <span className="font-bold text-blue-600">{selectedSeats.length}</span>
+              Total Tickets: <span className="font-bold text-blue-600">{selectedSeats.length}</span>
             </p>
             <p className='text-xl font-bold mt-2 text-primary'>
-              **Total Amount:** Rs. {totalAmountRs.toFixed(2)}
+              Total Amount: Rs. {totalAmountRs.toFixed(2)}
             </p>
           </div>
 

@@ -1,7 +1,7 @@
 import { Inngest } from "inngest";
 import { connectDb } from "../db/init.js";
-import { and, eq } from "drizzle-orm";
-import { seats, shows, showSeats } from "../db/schema.js";
+import { and, eq, ne } from "drizzle-orm";
+import { seats, shows, showSeats, tickets } from "../db/schema.js";
 
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "my-app" });
@@ -23,7 +23,6 @@ const showSeat = inngest.createFunction(
       const db = connectDb();
       const { showId, screenId } = event.data;
 
-      // Fetch seat layout for the screen
       // seats table should have `row` and `column` = total seats in that row
       const seatRows = await db
         .select({ row: seats.row, totalSeats: seats.column }) // column = total seats in that row
@@ -39,7 +38,6 @@ const showSeat = inngest.createFunction(
 
       const showSeatsRows: any[] = [];
 
-      // For each row, generate seats
       seatRows.forEach((seatRow: any) => {
         const rowName = seatRow.row;
         const total = seatRow.totalSeats;
@@ -55,7 +53,6 @@ const showSeat = inngest.createFunction(
         }
       });
 
-      // Insert all rows at once
       await db.insert(showSeats).values(showSeatsRows);
 
       return { success: true, created: showSeatsRows.length };
@@ -80,7 +77,50 @@ const inActiveSeats = inngest.createFunction(
           status: "SELECTED",
           booked_by: userId,
         })
-        .where(eq(showSeats.id, id))
+        .where(and(eq(showSeats.id, id), ne(showSeats.status, "BOOKED")))
+        .execute();
+
+      return { success: true, updated: result.rowCount };
+    } catch (err: any) {
+      console.error("Failed to mark seats as inactive:", err);
+      return { success: false, error: err.message };
+    }
+  },
+);
+
+const bookSeats = inngest.createFunction(
+  { id: "book-seats" },
+  { event: "booking/book-seats" },
+  async ({ event }) => {
+    try {
+      const db = connectDb();
+      const { id, userId, transaction_id, phone, pidx } = event.data;
+      const result = await db
+        .update(showSeats)
+        .set({
+          status: "BOOKED",
+          booked_by: userId,
+        })
+        .where(
+          and(
+            eq(showSeats.showId, id),
+            eq(showSeats.booked_by, userId),
+            eq(showSeats.status, "SELECTED"),
+          ),
+        )
+        .execute();
+
+      await db
+        .insert(tickets)
+        .values({
+          paymentMethod: "KHALTI",
+          paymentDate: new Date(),
+          customerId: userId,
+          showId: Number(id),
+          transactionId: transaction_id,
+          mobile: phone,
+          pidx,
+        })
         .execute();
 
       return { success: true, updated: result.rowCount };
@@ -109,6 +149,7 @@ const clearSelectedSeats = inngest.createFunction(
           and(
             eq(showSeats.showId, Number(id)),
             eq(showSeats.booked_by, userId),
+            ne(showSeats.status, "BOOKED"),
           ),
         )
         .execute();
@@ -127,4 +168,5 @@ export const functions = [
   showSeat,
   inActiveSeats,
   clearSelectedSeats,
+  bookSeats,
 ];

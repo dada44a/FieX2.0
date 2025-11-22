@@ -38,28 +38,37 @@ app.get('/', (c) => {
 
 app.post("/initiate", async (c) => {
   try {
-    const { name, email, phone, amount, purchase_order_name } = await c.req.json();
+    const { name, email, phone, amount, purchase_order_name, showId, customerId } = await c.req.json();
 
     const res = await fetch("https://dev.khalti.com/api/v2/epayment/initiate/", {
       method: "POST",
       headers: {
         "Authorization": `Key ${process.env.KHALTI_SECRET_KEY}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        return_url: "http://localhost:5173/",
-        website_url: "http://localhost:5173",
-        amount: amount,              // already paisa from frontend
+        return_url: `http://localhost:3000/protected/movie/payment-success?showId=${showId}&customerId=${customerId}&phone=${phone}`,
+        website_url: "http://localhost:3000",
+        amount,
         purchase_order_id: Date.now().toString(),
         purchase_order_name,
-        customer_info: { name, email, phone }
-      })
+        customer_info: { name, email, phone },
+      }),
     });
-    const data = await res.json();
-    return c.json(data);
+
+    const khalti = await res.json();
+
+    // 🔥 Return payment_url directly to frontend
+    return c.json({
+      success: true,
+      payment_url: khalti.payment_url,
+      pidx: khalti.pidx,
+      showId,
+      customerId
+    });
 
   } catch (err) {
-    console.error(err);
+    console.error("Khalti Error:", err);
     return c.json({ error: "Failed to initiate payment" }, 500);
   }
 });

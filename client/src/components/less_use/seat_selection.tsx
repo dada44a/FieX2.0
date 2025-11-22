@@ -33,7 +33,8 @@ export default function SeatSelection({ showId, onSeatSelectChange }: SeatSelect
       return json.data as Seat[];
     },
     enabled: !!showId,
-    refetchInterval: 100, // refetch every 100ms for real-time updates
+    refetchInterval: 100,
+    refetchIntervalInBackground: true // refetch every 100ms for real-time updates
   });
   
   // Helper function to get the current selected seats
