@@ -206,7 +206,7 @@ function RouteComponent() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start max-w-5xl w-full"> 
 
         {/* SEAT LAYOUT */}
-        <div className='p-4 bg-gray-50 rounded-lg shadow-inner'>
+        <div className='p-4 rounded-lg shadow-inner'>
           <div className='flex justify-between items-center mb-4'>
             <h2 className='text-xl font-bold text-center'>Select Your Seats</h2>
             {/* NEW: Clear Selection Button */}
@@ -232,15 +232,15 @@ function RouteComponent() {
         {/* PAYMENT CARD AND SUMMARY */}
         <div className="w-full">
           {/* Summary Card */}
-          <div className='mb-6 p-4 bg-blue-100 border border-blue-300 rounded-lg shadow-md'>
-            <h3 className='text-lg font-semibold text-blue-800 mb-2'>Selected Seats Summary</h3>
+          <div className='mb-6 p-4  border border-blue-300 rounded-lg shadow-md'>
+            <h3 className='text-lg font-semibold text-accent mb-2'>Selected Seats Summary</h3>
             <p className='text-gray-700'>
               **Selected Seats:** <span className="font-mono text-sm bg-blue-200 px-2 py-0.5 rounded">{seatLabels || 'None'}</span>
             </p>
             <p className='text-gray-700'>
               **Total Tickets:** <span className="font-bold text-blue-600">{selectedSeats.length}</span>
             </p>
-            <p className='text-xl font-bold mt-2 text-green-700'>
+            <p className='text-xl font-bold mt-2 text-primary'>
               **Total Amount:** Rs. {totalAmountRs.toFixed(2)}
             </p>
           </div>

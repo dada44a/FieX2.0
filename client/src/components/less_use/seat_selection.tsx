@@ -144,8 +144,7 @@ export default function SeatSelection({ showId, onSeatSelectChange }: SeatSelect
 
   return (
     <div className="flex flex-col gap-2">
-        <h3 className="text-xl font-bold">🍿 Seat Selection</h3>
-        <div className="flex justify-center items-center h-4 w-full bg-gray-700 text-white rounded-t-lg mb-4">Screen</div>
+        <div className="flex justify-center items-center h-4 w-full rounded-t-lg mb-4">Screen</div>
       {rows.map((row) => (
         <div key={row} className="flex gap-2 justify-center">
           {Array.from({ length: seatsByRow[row] }, (_, i) => {
@@ -163,12 +162,12 @@ export default function SeatSelection({ showId, onSeatSelectChange }: SeatSelect
 
             const color =
               seat.status === "BOOKED"
-                ? "bg-red-500 cursor-not-allowed" // Booked by anyone
+                ? "bg-error cursor-not-allowed" // Booked by anyone
                 : isUserSelected // Locally pending or globally selected by current user
-                ? "bg-blue-500 hover:bg-blue-600 cursor-pointer"
+                ? "bg-accent hover:bg-blue-600 cursor-pointer"
                 : seat.status === "SELECTED" // Selected by another user
-                ? "bg-yellow-500 cursor-not-allowed"
-                : "bg-green-400 hover:bg-green-500 cursor-pointer"; // Available
+                ? "bg-warning cursor-not-allowed"
+                : "bg-primary hover:bg-green-500 cursor-pointer"; // Available
 
             return (
               <div
@@ -184,22 +183,21 @@ export default function SeatSelection({ showId, onSeatSelectChange }: SeatSelect
           })}
         </div>
       ))}
-      <hr />
       <div className="flex justify-center gap-4 mt-4">
         <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-green-400"></div>
+            <div className="w-4 h-4 rounded-full bg-primary"></div>
             <p className="text-sm">Available</p>
         </div>
         <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-blue-500"></div>
+            <div className="w-4 h-4 rounded-full bg-accent"></div>
             <p className="text-sm">Your Selection</p>
         </div>
         <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
+            <div className="w-4 h-4 rounded-full bg-warning"></div>
             <p className="text-sm">Held by Others</p>
         </div>
         <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-red-500"></div>
+            <div className="w-4 h-4 rounded-full bg-error"></div>
             <p className="text-sm">Booked</p>
         </div>
       </div>
