@@ -1,6 +1,8 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useAddData, useEditData } from "@/hooks/useAddData";
 import { LoadingTable } from "../loadingtable";
+import { createColumnHelper } from "@tanstack/react-table";
+import Table from "../Table";
 
 const BASE_URL = "http://localhost:4000";
 
@@ -16,6 +18,7 @@ interface Show {
   screenPrice?: number;
 }
 
+const columnHelper = createColumnHelper<Show>();
 const ShowManagement: React.FC = () => {
 
   const add = useAddData();
@@ -159,6 +162,41 @@ const ShowManagement: React.FC = () => {
     }
   };
 
+  const columns = useMemo(() => [
+    columnHelper.accessor("movieTitle", {
+      header: "Movie",
+    }),
+    columnHelper.accessor("screenName", {
+      header: "Screen",
+      cell: info => {
+        const screen = screens.find(s => s.id === info.row.original.screenId);
+        return (
+          <>
+            {info.getValue()} {screen?.price ? `(Rs ${screen.price})` : ""}
+          </>
+        );
+      }
+    }),
+    columnHelper.accessor("showDate", {
+      header: "Date",
+    }),
+    columnHelper.accessor("showTime", {
+      header: "Time",
+    }),
+    columnHelper.display({
+      id: "actions",
+      header: "Action",
+      cell: info => (
+        <button
+          onClick={() => openDialog(info.row.original)}
+          className="btn btn-sm btn-neutral"
+        >
+          Edit
+        </button>
+      ),
+    }),
+  ], [screens]);  
+
   if (loading) return <LoadingTable wantToShow={false} />;
 
   return (
@@ -273,48 +311,7 @@ const ShowManagement: React.FC = () => {
           </div>
         </div>
       </dialog>
-
-      {/* Shows Table */}
-      <div className="overflow-x-auto">
-        <table className="table w-full">
-          <thead>
-            <tr>
-              <th>Movie</th>
-              <th>Screen</th>
-              <th>Date</th>
-              <th>Time</th>
-              <th>Admin</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {shows.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="text-center p-4">
-                  No shows available.
-                </td>
-              </tr>
-            ) : (
-              shows.map((show) => (
-                <tr key={show.id}>
-                  <td>{show.movieTitle || "—"}</td>
-                  <td>
-                    {show.screenName} {show.screenPrice ? `(Rs ${show.screenPrice})` : ""}
-                  </td>
-                  <td>{show.showDate}</td>
-                  <td>{show.showTime}</td>
-                  <td>{show.adminEmail || "—"}</td>
-                  <td className="flex gap-2">
-                    <button onClick={() => openDialog(show)} className="btn btn-sm btn-neutral">
-                      Edit
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Table data={shows} columns={columns} />
     </div>
   );
 };

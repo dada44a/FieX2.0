@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { connectDb } from "../db/init.js";
-import { shows, tickets, users } from "../db/schema.js";
+import { movies, screens, shows, tickets, users } from "../db/schema.js";
 import { and, eq } from "drizzle-orm/sql/expressions/conditions";
 import type { NewTicket, Ticket } from "../types.js";
 import { updateUserPoints } from "./user.routes.js";
@@ -24,7 +24,23 @@ const checker = async (db: any, showId: number, userId: string) => {
 ticketRoutes.get('/', async (c) => {
     try {
         const db = connectDb();
-        const ticket: Ticket[] = await db.select().from(tickets);
+        const ticket: Ticket[] = await db.select({
+            id: tickets.id,
+            customer: tickets.customerId,
+            movie: movies.title,
+            genre: movies.genre,
+            show: shows.id,
+            paymentDate: tickets.paymentDate,
+            transactionId: tickets.transactionId,
+            pidx: tickets.pidx,
+            screen: screens.name,
+            showTime: shows.showTime,
+            showDate: shows.showDate,
+
+        }).from(tickets)
+        .innerJoin(shows, eq(tickets.showId, shows.id))
+        .innerJoin(movies, eq(movies.id, shows.movieId))
+        .innerJoin(screens, eq(screens.id, shows.screenId));
         return c.json({ message: 'List of tickets', data: ticket });
     }
     catch (error: any) {
@@ -33,24 +49,6 @@ ticketRoutes.get('/', async (c) => {
 });
 
 
-//? Create a new ticket
-ticketRoutes.post('/', async (c) => {
-    const data= await c.req.json();
-
-    try {
-        const db = connectDb();
-        const dataValidation = await checker(db, data.showId, data.customerId);
-        if (!dataValidation) {
-            return c.json({ message: 'Certain data does not exist in database' }, 400);
-        }
-        await updateUserPoints(data.customerId, 10, db);
-        const newTicket: NewTicket = await db.insert(tickets).values(data).returning();
-        return c.json({ message: 'Create a new ticket', data: newTicket });
-    } catch (error: any) {
-        return c.json({ message: 'Error creating ticket', error: error.message }, 500);
-    }
-}
-);
 
 
 //? Get ticket by ID

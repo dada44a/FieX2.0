@@ -16,6 +16,7 @@ import { Route as ProtectedAdminIndexRouteImport } from './routes/protected/admi
 import { Route as ProtectedMoviePaymentSucessRouteImport } from './routes/protected/movie/payment-sucess'
 import { Route as ProtectedMoviePaymentSuccessRouteImport } from './routes/protected/movie/payment-success'
 import { Route as ProtectedAdminScreenidSeatsRouteImport } from './routes/protected/admin/$screenid/seats'
+import { Route as ProtectedUserProfileTicketidTicketRouteImport } from './routes/protected/user/profile/$ticketid/ticket'
 
 const ProtectedAdminReportsLazyRouteImport = createFileRoute(
   '/protected/admin/reports',
@@ -37,6 +38,9 @@ const ProtectedAdminEditEditLazyRouteImport = createFileRoute(
 )()
 const ProtectedAdminDeleteDeleteLazyRouteImport = createFileRoute(
   '/protected/admin/delete/$delete',
+)()
+const ProtectedUserProfileTicketidIndexLazyRouteImport = createFileRoute(
+  '/protected/user/profile/$ticketid/',
 )()
 
 const IndexRoute = IndexRouteImport.update({
@@ -124,6 +128,22 @@ const ProtectedAdminScreenidSeatsRoute =
     path: '/protected/admin/$screenid/seats',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ProtectedUserProfileTicketidIndexLazyRoute =
+  ProtectedUserProfileTicketidIndexLazyRouteImport.update({
+    id: '/protected/user/profile/$ticketid/',
+    path: '/protected/user/profile/$ticketid/',
+    getParentRoute: () => rootRouteImport,
+  } as any).lazy(() =>
+    import('./routes/protected/user/profile/$ticketid/index.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+const ProtectedUserProfileTicketidTicketRoute =
+  ProtectedUserProfileTicketidTicketRouteImport.update({
+    id: '/protected/user/profile/$ticketid/ticket',
+    path: '/protected/user/profile/$ticketid/ticket',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -138,6 +158,8 @@ export interface FileRoutesByFullPath {
   '/protected/movie/$movieid/payment': typeof ProtectedMovieMovieidPaymentLazyRoute
   '/protected/movie/$movieid': typeof ProtectedMovieMovieidIndexLazyRoute
   '/protected/user/profile': typeof ProtectedUserProfileIndexLazyRoute
+  '/protected/user/profile/$ticketid/ticket': typeof ProtectedUserProfileTicketidTicketRoute
+  '/protected/user/profile/$ticketid': typeof ProtectedUserProfileTicketidIndexLazyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -152,6 +174,8 @@ export interface FileRoutesByTo {
   '/protected/movie/$movieid/payment': typeof ProtectedMovieMovieidPaymentLazyRoute
   '/protected/movie/$movieid': typeof ProtectedMovieMovieidIndexLazyRoute
   '/protected/user/profile': typeof ProtectedUserProfileIndexLazyRoute
+  '/protected/user/profile/$ticketid/ticket': typeof ProtectedUserProfileTicketidTicketRoute
+  '/protected/user/profile/$ticketid': typeof ProtectedUserProfileTicketidIndexLazyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -167,6 +191,8 @@ export interface FileRoutesById {
   '/protected/movie/$movieid/payment': typeof ProtectedMovieMovieidPaymentLazyRoute
   '/protected/movie/$movieid/': typeof ProtectedMovieMovieidIndexLazyRoute
   '/protected/user/profile/': typeof ProtectedUserProfileIndexLazyRoute
+  '/protected/user/profile/$ticketid/ticket': typeof ProtectedUserProfileTicketidTicketRoute
+  '/protected/user/profile/$ticketid/': typeof ProtectedUserProfileTicketidIndexLazyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -183,6 +209,8 @@ export interface FileRouteTypes {
     | '/protected/movie/$movieid/payment'
     | '/protected/movie/$movieid'
     | '/protected/user/profile'
+    | '/protected/user/profile/$ticketid/ticket'
+    | '/protected/user/profile/$ticketid'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -197,6 +225,8 @@ export interface FileRouteTypes {
     | '/protected/movie/$movieid/payment'
     | '/protected/movie/$movieid'
     | '/protected/user/profile'
+    | '/protected/user/profile/$ticketid/ticket'
+    | '/protected/user/profile/$ticketid'
   id:
     | '__root__'
     | '/'
@@ -211,6 +241,8 @@ export interface FileRouteTypes {
     | '/protected/movie/$movieid/payment'
     | '/protected/movie/$movieid/'
     | '/protected/user/profile/'
+    | '/protected/user/profile/$ticketid/ticket'
+    | '/protected/user/profile/$ticketid/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -226,6 +258,8 @@ export interface RootRouteChildren {
   ProtectedMovieMovieidPaymentLazyRoute: typeof ProtectedMovieMovieidPaymentLazyRoute
   ProtectedMovieMovieidIndexLazyRoute: typeof ProtectedMovieMovieidIndexLazyRoute
   ProtectedUserProfileIndexLazyRoute: typeof ProtectedUserProfileIndexLazyRoute
+  ProtectedUserProfileTicketidTicketRoute: typeof ProtectedUserProfileTicketidTicketRoute
+  ProtectedUserProfileTicketidIndexLazyRoute: typeof ProtectedUserProfileTicketidIndexLazyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -314,6 +348,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedAdminScreenidSeatsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/protected/user/profile/$ticketid/': {
+      id: '/protected/user/profile/$ticketid/'
+      path: '/protected/user/profile/$ticketid'
+      fullPath: '/protected/user/profile/$ticketid'
+      preLoaderRoute: typeof ProtectedUserProfileTicketidIndexLazyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/protected/user/profile/$ticketid/ticket': {
+      id: '/protected/user/profile/$ticketid/ticket'
+      path: '/protected/user/profile/$ticketid/ticket'
+      fullPath: '/protected/user/profile/$ticketid/ticket'
+      preLoaderRoute: typeof ProtectedUserProfileTicketidTicketRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -330,6 +378,10 @@ const rootRouteChildren: RootRouteChildren = {
   ProtectedMovieMovieidPaymentLazyRoute: ProtectedMovieMovieidPaymentLazyRoute,
   ProtectedMovieMovieidIndexLazyRoute: ProtectedMovieMovieidIndexLazyRoute,
   ProtectedUserProfileIndexLazyRoute: ProtectedUserProfileIndexLazyRoute,
+  ProtectedUserProfileTicketidTicketRoute:
+    ProtectedUserProfileTicketidTicketRoute,
+  ProtectedUserProfileTicketidIndexLazyRoute:
+    ProtectedUserProfileTicketidIndexLazyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
