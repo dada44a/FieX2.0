@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'; 
 
 import * as TanStackQueryProvider from './integrations/tanstack-query/root-provider.tsx'
 
@@ -32,6 +33,7 @@ declare module '@tanstack/react-router' {
   }
 }
 
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 
 // Render the app

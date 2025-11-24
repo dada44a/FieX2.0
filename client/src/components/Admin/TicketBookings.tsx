@@ -1,187 +1,126 @@
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { createColumnHelper } from "@tanstack/react-table";
+import { useMemo } from "react";
+import Table from "../Table";
+import { LoadingTable } from "../loadingtable";
+
+const BASE_URL = "http://localhost:4000/api/tickets";
+
+//  {
+//       "id": 12,
+//       "customer": "user_34jg548eKES5UHuGjc5adyVihjY",
+//       "movie": "asdasdas",
+//       "genre": "asdadasd",
+//       "show": 3,
+//       "paymentDate": "2025-11-22",
+//       "transactionId": "jkZCpuzEpu674hmaRgCEgL",
+//       "pidx": "HPvVQCsScUMzv8y2uoV3NT",
+//       "screen": "silver",
+//       "showTime": "10:00:00",
+//       "showDate": "2025-11-24"
+//     },
+
+type Ticket = {
+  id: number;
+  customer: string;
+  movie: string;
+  show: number;
+  paymentDate: string;
+  transactionId: string;
+  pidx: string;
+  screen: string;
+  showTime: string;
+  showDate: string;
+  genre: string;
+};
+
+
 const TicketBookings = () => {
+  // Fetch tickets using React Query
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["tickets"],
+    queryFn: async () => {
+      const res = await axios.get(BASE_URL);
+      return res.data?.data || [];
+    },
+  });
+
+
+  const columnHelper = createColumnHelper<Ticket>();
+
+  const columns = useMemo(() => [
+    columnHelper.accessor('id', { header: 'ID' }),
+    columnHelper.accessor('customer', {
+      header: 'Customer'
+    }),
+    columnHelper.accessor('movie', {
+      header: 'Movie'
+    }),
+    columnHelper.accessor('paymentDate', {
+      header: 'Date/Time'
+    }),
+    columnHelper.accessor('transactionId', {
+      header: 'Transation Id'
+    }),
+    columnHelper.accessor('pidx', {
+      header: 'pidx'
+    }),
+    columnHelper.accessor('show', {
+      header: 'Show'
+    }),
+    columnHelper.accessor('genre', {
+      header: 'Genre'
+    }),
+    columnHelper.accessor('screen', {
+      header: 'Screen'
+    }),
+    columnHelper.accessor('showTime', {
+      header: 'Show Time'
+    }),
+    columnHelper.accessor('showDate', {
+      header: 'Show Date'
+    }),
+    columnHelper.display(
+      {
+        id: 'status',
+        header: 'Status',
+        cell: () => <span className="badge badge-success">Paid</span>
+      }
+    )
+
+  ], [])
+
+  if (isLoading) {
+    return <LoadingTable wantToShow={false} />;
+  }
+
+  if (isError) {
+    return <div className="text-error">Error fetching tickets.</div>;
+  }
+
   return (
     <>
+      <Table<Ticket> data={data || []} columns={columns} />
+
       <div className="flex flex-row items-center gap-2">
-        <input type="text" placeholder="Type here" className="input my-3 outline-0" />
+        <input
+          type="text"
+          placeholder="Search"
+          className="input my-3 outline-0"
+        />
         <button className="btn btn-md btn-neutral">Search</button>
       </div>
-      <div className="overflow-x-auto">
-        <table className="table">
-          {/* head */}
-          <thead>
-            <tr>
-              <th>Id</th>
-              <th>Customer</th>
-              <th>Movie</th>
-              <th>Date/Time</th>
-              <th>Seats</th>
-              <th>Amount</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* row 1 */}
-            <tr>
-              <td>
-                <div className="flex items-center gap-3">
-                  <div className="avatar">
-                    <div className="mask mask-squircle h-12 w-12">
-                      <img
-                        src="https://img.daisyui.com/images/profile/demo/2@94.webp"
-                        alt="Avatar Tailwind CSS Component"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-bold">Hart Hagerty</div>
-                    <div className="text-sm opacity-50">United States</div>
-                  </div>
-                </div>
-              </td>
-              <td>
-                Zemlak, Daniel and Leannon
-                <br />
-                <span className="badge badge-ghost badge-sm">
-                  Desktop Support Technician
-                </span>
-              </td>
-              <td>Purple</td>
-              <th>
-                <button className="btn btn-ghost btn-xs">details</button>
-              </th>
-              <td>A5,A9</td>
-              <td>$1992</td>
-              <td>Paid</td>
-              <td>
-                <div className="flex gap-3">
-                  <button className="btn btn-sm btn-neutral">Edit</button>
-                  <button className="btn btn-sm btn-error">Delete</button>
-                </div>
-              </td>
-            </tr>
-            {/* row 2 */}
-            <tr>
-              <td>
-                <div className="flex items-center gap-3">
-                  <div className="avatar">
-                    <div className="mask mask-squircle h-12 w-12">
-                      <img
-                        src="https://img.daisyui.com/images/profile/demo/3@94.webp"
-                        alt="Avatar Tailwind CSS Component"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-bold">Brice Swyre</div>
-                    <div className="text-sm opacity-50">China</div>
-                  </div>
-                </div>
-              </td>
-              <td>
-                Carroll Group
-                <br />
-                <span className="badge badge-ghost badge-sm">
-                  Tax Accountant
-                </span>
-              </td>
-              <td>Red</td>
-              <th>
-                <button className="btn btn-ghost btn-xs">details</button>
-              </th>
-              <td>A5,A9</td>
-              <td>$1992</td>
-              <td>Paid</td>
-              <td>
-                <div className="flex gap-3">
-                  <button className="btn btn-sm btn-neutral">Edit</button>
-                  <button className="btn btn-sm btn-error">Delete</button>
-                </div>
-              </td>
-            </tr>
-            {/* row 3 */}
-            <tr>
-              <td>
-                <div className="flex items-center gap-3">
-                  <div className="avatar">
-                    <div className="mask mask-squircle h-12 w-12">
-                      <img
-                        src="https://img.daisyui.com/images/profile/demo/4@94.webp"
-                        alt="Avatar Tailwind CSS Component"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-bold">Marjy Ferencz</div>
-                    <div className="text-sm opacity-50">Russia</div>
-                  </div>
-                </div>
-              </td>
-              <td>
-                Rowe-Schoen
-                <br />
-                <span className="badge badge-ghost badge-sm">
-                  Office Assistant I
-                </span>
-              </td>
-              <td>Crimson</td>
-              <th>
-                <button className="btn btn-ghost btn-xs">details</button>
-              </th>
-              <td>A5,A9</td>
-              <td>$1992</td>
-              <td>Paid</td>
-              <td>
-                <div className="flex gap-3">
-                  <button className="btn btn-sm btn-neutral">Edit</button>
-                  <button className="btn btn-sm btn-error">Delete</button>
-                </div>
-              </td>
-            </tr>
-            {/* row 4 */}
-            <tr>
-              <td>
-                <div className="flex items-center gap-3">
-                  <div className="avatar">
-                    <div className="mask mask-squircle h-12 w-12">
-                      <img
-                        src="https://img.daisyui.com/images/profile/demo/5@94.webp"
-                        alt="Avatar Tailwind CSS Component"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-bold">Yancy Tear</div>
-                    <div className="text-sm opacity-50">Brazil</div>
-                  </div>
-                </div>
-              </td>
-              <td>
-                Wyman-Ledner
-                <br />
-                <span className="badge badge-ghost badge-sm">
-                  Community Outreach Specialist
-                </span>
-              </td>
-              <td>Indigo</td>
-              <th>
-                <button className="btn btn-ghost btn-xs">details</button>
-              </th>
-              <td>A5,A9</td>
-              <td>$1992</td>
-              <td>Paid</td>
-              <td>
-                <div className="flex gap-3">
-                  <button className="btn btn-sm btn-neutral">Edit</button>
-                  <button className="btn btn-sm btn-error">Delete</button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+
     </>
   );
 };
 
 export default TicketBookings;
+
+
+// export const DATA = ()=>{
+//   return (
+//     
+//   )
+// }

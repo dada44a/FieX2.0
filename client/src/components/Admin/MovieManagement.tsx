@@ -1,7 +1,10 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { LoadingTable } from "../loadingtable";
+import { createColumnHelper } from "@tanstack/react-table";
+import Table from "../Table";
+
 
 interface Movie {
   id: number;
@@ -13,8 +16,10 @@ interface Movie {
   description: string;
 }
 
+const columnHelper = createColumnHelper<Movie>();
+
 const MovieManagement: React.FC = () => {
-  const { isPending, error, data } = useQuery({
+  const { isLoading, error, data } = useQuery({
     queryKey: ["movies"],
     queryFn: async () => {
       const res = await fetch("http://localhost:4000/api/movies");
@@ -25,33 +30,98 @@ const MovieManagement: React.FC = () => {
     },
   });
 
+  const Button: React.FC = () => {
+    return (
+      <div>
+        <Link
+          to="/protected/admin/add"
+          className="btn btn-primary btn-md mb-4"
+        >
+          Add
+        </Link>
+      </div>
+    );
+  };
+
+
   const movies: Movie[] = data?.data || [];
 
   // ---------- Pagination Logic ----------
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
+  // const [currentPage, setCurrentPage] = useState(1);
+  // const [pageSize, setPageSize] = useState(5);
 
-  const totalPages = Math.ceil(movies.length / pageSize);
+  // const totalPages = Math.ceil(movies.length / pageSize);
 
-  const paginatedMovies = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    return movies.slice(startIndex, startIndex + pageSize);
-  }, [movies, currentPage, pageSize]);
+  // const paginatedMovies = useMemo(() => {
+  //   const startIndex = (currentPage - 1) * pageSize;
+  //   return movies.slice(startIndex, startIndex + pageSize);
+  // }, [movies, currentPage, pageSize]);
 
-  const handlePrev = () => setCurrentPage((p) => Math.max(p - 1, 1));
-  const handleNext = () => setCurrentPage((p) => Math.min(p + 1, totalPages));
+  // const handlePrev = () => setCurrentPage((p) => Math.max(p - 1, 1));
+  // const handleNext = () => setCurrentPage((p) => Math.min(p + 1, totalPages));
+
+
+  const column = useMemo(() => {
+    return [
+      columnHelper.accessor('imageLink', {
+        header: 'Image',
+        cell: info => <img src={info.getValue()} loading="lazy" alt="Movie Poster" className="h-12 w-12 object-cover rounded-full" />
+      }),
+      columnHelper.accessor('id', { header: 'ID' }),
+      columnHelper.accessor('title', { header: 'Title' }),
+      columnHelper.accessor('description', { header: 'Description' }),
+      columnHelper.accessor('genre', { header: 'Genre' }),
+      columnHelper.accessor('casts', { header: 'Cast' }),
+      columnHelper.accessor('releaseDate', { header: 'Release Date' }),
+      columnHelper.display({
+        id: 'actions',
+        header: 'Actions',
+        cell: info => (
+          <div className="flex gap-2">
+            <Link
+              to="/protected/admin/edit/$edit"
+              params={{ edit: info.row.original.id.toString() }}
+              className="btn btn-sm btn-primary"
+            >
+              Edit
+            </Link>
+            <Link
+              to="/protected/admin/delete/$delete"
+              params={{ delete: info.row.original.id.toString() }}
+              className="btn btn-sm btn-neutral"
+            >
+              Delete
+            </Link>
+          </div>
+        )
+      })
+
+    ];
+
+  }, [])
 
   // ---------- Render ----------
+  if (isLoading) {
+    return <LoadingTable wantToShow={false} />;
+  }
+
+  if (error) {
+    return <div className="text-error">Error fetching movies: {(error as Error).message}</div>;
+  }
+
   return (
     <div className="overflow-x-auto p-4">
       {/* Loading and Error States */}
-      {isPending && <LoadingTable wantToShow={false} />}
+
       {error && <p className="text-red-500">{(error as Error).message}</p>}
 
       {/* Movies Table */}
-      {!isPending && !error && movies.length > 0 && (
+      {!isLoading && !error && movies.length > 0 && (
         <>
-          <table className="table w-full">
+          <Button />
+          <Table columns={column} data={movies} />
+
+          {/* <table className="table w-full">
             <thead>
               <tr>
                 <th>Movie</th>
@@ -107,9 +177,9 @@ const MovieManagement: React.FC = () => {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table> */}
 
-          {/* Pagination Controls */}
+          {/* Pagination Controls
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center gap-2">
               <button
@@ -159,13 +229,16 @@ const MovieManagement: React.FC = () => {
                 </option>
               ))}
             </select>
-          </div>
+          </div> */}
         </>
       )}
 
       {/* If no movies */}
-      {!isPending && !error && movies.length === 0 && (
-        <p className="text-center mt-4 text-gray-500">No movies found.</p>
+      {!isLoading && !error && movies.length === 0 && (
+        <div>
+          <Button />
+          <p className="text-center mt-4 text-gray-500">No movies found.</p>
+        </div>
       )}
     </div>
   );
