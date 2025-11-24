@@ -7,20 +7,6 @@ import { LoadingTable } from "../loadingtable";
 
 const BASE_URL = "http://localhost:4000/api/tickets";
 
-//  {
-//       "id": 12,
-//       "customer": "user_34jg548eKES5UHuGjc5adyVihjY",
-//       "movie": "asdasdas",
-//       "genre": "asdadasd",
-//       "show": 3,
-//       "paymentDate": "2025-11-22",
-//       "transactionId": "jkZCpuzEpu674hmaRgCEgL",
-//       "pidx": "HPvVQCsScUMzv8y2uoV3NT",
-//       "screen": "silver",
-//       "showTime": "10:00:00",
-//       "showDate": "2025-11-24"
-//     },
-
 type Ticket = {
   id: number;
   customer: string;
@@ -37,7 +23,7 @@ type Ticket = {
 
 
 const TicketBookings = () => {
-  // Fetch tickets using React Query
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["tickets"],
     queryFn: async () => {
@@ -101,16 +87,7 @@ const TicketBookings = () => {
 
   return (
     <>
-      <Table<Ticket> data={data || []} columns={columns} />
-
-      <div className="flex flex-row items-center gap-2">
-        <input
-          type="text"
-          placeholder="Search"
-          className="input my-3 outline-0"
-        />
-        <button className="btn btn-md btn-neutral">Search</button>
-      </div>
+      <Table <Ticket> data={data || []} columns={columns} />
 
     </>
   );
@@ -118,9 +95,3 @@ const TicketBookings = () => {
 
 export default TicketBookings;
 
-
-// export const DATA = ()=>{
-//   return (
-//     
-//   )
-// }

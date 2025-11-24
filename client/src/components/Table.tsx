@@ -1,14 +1,34 @@
-import { flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
+import { flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
+import React from "react";
+import { fuzzyFilter } from "./fuzzyFIlter";
 
 
 export default function Table<T>({ data, columns }: { data: any[], columns: any[] }) {
+
+    const [sortedState, setSortedState] = React.useState<any>([]);
     const table = useReactTable<T>({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        state:{
+            sorting: sortedState
+        },
+        onSortingChange: setSortedState,
+        filterFns: {
+            fuzzy: fuzzyFilter
+        },
+        globalFilterFn: fuzzyFilter
     });
     return (
         <div className="overflow-x-auto">
+            <input
+                value={table.getState().globalFilter ?? ""}
+                onChange={e => table.setGlobalFilter(e.target.value)}
+                placeholder="Search all columns..."
+                className="input input-bordered  mb-4"
+            />
             <table className="table">
                 <thead>
                     {table.getHeaderGroups().map((headerGroup) => {
@@ -19,6 +39,10 @@ export default function Table<T>({ data, columns }: { data: any[], columns: any[
                                         <th style={{width: header.getSize()}}
                                         colSpan={header.colSpan}>
                                             {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+
+                                            <button className="badge badge-accent badge-sm ml-3" onClick={header.column.getToggleSortingHandler()} >
+                                                :
+                                            </button>
                                         </th>
                                     )
                                 })}

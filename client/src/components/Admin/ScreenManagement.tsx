@@ -132,8 +132,9 @@ const ScreenManagement: React.FC = () => {
     ];
   }, []);
 
-  /** ---------- RENDER ---------- */
+
   return (
+
     <div className="p-6">
 
       <h2 className="text-xl font-bold mb-4">Screen Management</h2>
@@ -175,6 +176,7 @@ const ScreenManagement: React.FC = () => {
 
       <Table data={screens} columns={columns} />
     </div>
+
   );
 };
 

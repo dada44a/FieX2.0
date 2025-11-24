@@ -37,7 +37,10 @@ ticketRoutes.get('/', async (c) => {
             showTime: shows.showTime,
             showDate: shows.showDate,
 
-        }).from(tickets).innerJoin(shows, eq(tickets.showId, shows.id)).innerJoin(movies, eq(movies.id, shows.movieId)).innerJoin(screens, eq(screens.id, shows.screenId));
+        }).from(tickets)
+        .innerJoin(shows, eq(tickets.showId, shows.id))
+        .innerJoin(movies, eq(movies.id, shows.movieId))
+        .innerJoin(screens, eq(screens.id, shows.screenId));
         return c.json({ message: 'List of tickets', data: ticket });
     }
     catch (error: any) {
