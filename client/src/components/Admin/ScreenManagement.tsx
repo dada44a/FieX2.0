@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import React, { useEffect, useState } from "react";
+import { createColumnHelper } from "@tanstack/react-table";
+import React, { useEffect, useMemo, useState } from "react";
+import Table from "../Table";
 
 interface Screen {
   id: number;
@@ -16,6 +18,7 @@ const ScreenManagement: React.FC = () => {
   });
   const [isEditingScreen, setIsEditingScreen] = useState(false);
 
+  const columnHelper = createColumnHelper<Screen>();
   /** ---------- FETCH SCREENS ---------- */
   const fetchScreens = async () => {
     try {
@@ -103,9 +106,36 @@ const ScreenManagement: React.FC = () => {
     }
   };
 
+  const columns = useMemo(() => {
+
+    return [
+      columnHelper.accessor("id", {
+        header: "ID",
+      }),
+      columnHelper.accessor("name", {
+        header: "Name",
+      }),
+      columnHelper.accessor("price", {
+        header: "Price",
+      }),
+      columnHelper.display({
+        id: "action",
+        header: "Action",
+        cell: ({ row }) => (
+          <div className="flex gap-2">
+            <button className="btn btn-sm btn-neutral" onClick={() => handleEditScreen(row.original)}>Edit</button>
+            <button className="btn btn-sm btn-error" onClick={() => handleDeleteScreen(row.original.id)}>Delete</button>
+            <Link to="/protected/admin/$screenid/seats" params={{ screenid: row.original.id.toString() }} className="btn btn-sm btn-ghost">Seats</Link>
+          </div>
+        ),
+      }),
+    ];
+  }, []);
+
   /** ---------- RENDER ---------- */
   return (
     <div className="p-6">
+
       <h2 className="text-xl font-bold mb-4">Screen Management</h2>
 
       {/* Screen Form */}
@@ -143,41 +173,7 @@ const ScreenManagement: React.FC = () => {
         )}
       </form>
 
-      {/* Screen Table */}
-      <div className="overflow-x-auto">
-        <table className="table w-full">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Price</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {screens.length > 0 ? (
-              screens.map(screen => (
-                <tr key={screen.id}>
-                  <td>{screen.id}</td>
-                  <td>{screen.name}</td>
-                  <td>{screen.price}</td>
-                  <td className="flex gap-2">
-                    <button className="btn btn-sm btn-neutral" onClick={() => handleEditScreen(screen)}>Edit</button>
-                    <button className="btn btn-sm btn-error" onClick={() => handleDeleteScreen(screen.id)}>Delete</button>
-                    <Link to="/protected/admin/$screenid/seats" params={{screenid: screen.id.toString()}} className="btn btn-sm btn-ghost">Seats</Link>
-                  </td>
-                </tr>
-              )) 
-            ) : (
-              <tr>
-                <td colSpan={4} className="text-center py-2">
-                  No screens found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Table data={screens} columns={columns} />
     </div>
   );
 };
