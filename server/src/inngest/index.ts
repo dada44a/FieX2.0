@@ -27,7 +27,7 @@ const showSeat = inngest.createFunction(
       const seatRows = await db
         .select({ row: seats.row, totalSeats: seats.column }) // column = total seats in that row
         .from(seats)
-        .where(eq(seats.screenId, screenId));
+        .where(eq(seats.screenId, Number(screenId)));
 
       if (!seatRows.length) {
         return {
