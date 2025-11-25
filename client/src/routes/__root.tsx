@@ -22,10 +22,11 @@ interface MyRouterContext {
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   component: () => (
     <>
-  
+
       <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
         <Navbar />
-        <Outlet />
+
+          <Outlet />
         <Footer />
       </ClerkProvider>
       <TanStackDevtools

@@ -81,6 +81,7 @@ const TicketBookings = () => {
     return <LoadingTable wantToShow={false} />;
   }
 
+
   if (isError) {
     return <div className="text-error">Error fetching tickets.</div>;
   }

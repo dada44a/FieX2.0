@@ -1,4 +1,4 @@
-import { flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
+import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table";
 import React from "react";
 import { fuzzyFilter } from "./fuzzyFIlter";
 
@@ -6,23 +6,31 @@ import { fuzzyFilter } from "./fuzzyFIlter";
 export default function Table<T>({ data, columns }: { data: any[], columns: any[] }) {
 
     const [sortedState, setSortedState] = React.useState<any>([]);
+    const [pagination, setPagination] = React.useState({
+        pageIndex: 0, //initial page index
+        pageSize: 10, //default page size
+    });
     const table = useReactTable<T>({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
-        state:{
-            sorting: sortedState
+        state: {
+            sorting: sortedState,
+            pagination: pagination,
         },
         onSortingChange: setSortedState,
+        onPaginationChange: setPagination,
         filterFns: {
             fuzzy: fuzzyFilter
         },
-        globalFilterFn: fuzzyFilter
+        globalFilterFn: fuzzyFilter,
+        getPaginationRowModel: getPaginationRowModel(),
     });
+
     return (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto p-4">
             <input
                 value={table.getState().globalFilter ?? ""}
                 onChange={e => table.setGlobalFilter(e.target.value)}
@@ -36,8 +44,8 @@ export default function Table<T>({ data, columns }: { data: any[], columns: any[
                             <tr>
                                 {headerGroup.headers.map((header) => {
                                     return (
-                                        <th style={{width: header.getSize()}}
-                                        colSpan={header.colSpan}>
+                                        <th style={{ width: header.getSize() }}
+                                            colSpan={header.colSpan}>
                                             {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
 
                                             <button className="badge badge-accent badge-sm ml-3" onClick={header.column.getToggleSortingHandler()} >
@@ -79,7 +87,53 @@ export default function Table<T>({ data, columns }: { data: any[], columns: any[
                         </tr>
                     ))}
                 </tfoot>
+
+
             </table>
+            <div className="flex items-center gap-2 mt-4">
+                <button
+                    onClick={() => table.firstPage()}
+                    disabled={!table.getCanPreviousPage()}
+                    className="btn btn-error btn-sm"
+                >
+                    {'<<'}
+                </button>
+                <button
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                    className="btn btn-error btn-sm"
+                >
+                    {'<'}
+                </button>
+                <select
+                    value={table.getState().pagination.pageSize}
+                    onChange={e => {
+                        table.setPageSize(Number(e.target.value))
+                    }}
+                    className="btn btn-error btn-sm"
+                >
+                    {[1, 5, 10, 15, 20, 25, 30, 100].map(pageSize => (
+                        <option key={pageSize} value={pageSize}>
+                            {pageSize}
+                        </option>
+                    ))}
+                </select>
+                <button
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                    className="btn btn-error btn-sm"
+                >
+                    {'>'}
+                </button>
+                <button
+                    onClick={() => table.lastPage()}
+                    disabled={!table.getCanNextPage()}
+                    className="btn btn-error btn-sm"
+                >
+                    {'>>'}
+                </button>
+
+            </div>
         </div>
     )
 }

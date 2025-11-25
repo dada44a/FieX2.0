@@ -76,6 +76,7 @@ export const tickets = pgTable("tickets", {
   showId: integer("show_id").references(() => shows.id, {
     onDelete: "cascade",
   }),
+  bookedTime: text("booked_time"),
 });
 
 export const showSeats = pgTable("show_seats", {
@@ -90,4 +91,6 @@ export const showSeats = pgTable("show_seats", {
   column: integer("columns").notNull(),
   status: varchar("status", { length: 20 }).default("AVAILABLE").notNull(),
   booked_by: varchar("booked_by", { length: 255 }),
+  ticketId: integer("ticket_id").references(() => tickets.id, { onDelete: "cascade" }),
+  bookedTime: text("booked_time"),
 });

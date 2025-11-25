@@ -1,8 +1,10 @@
 import { LoadingTable } from '@/components/loadingtable';
+import Table from '@/components/Table';
 import { useAddData, useDeleteData, useEditData } from '@/hooks/useAddData';
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute, useParams } from '@tanstack/react-router';
-import { useRef, useState } from 'react';
+import { createFileRoute } from '@tanstack/react-router';
+import { createColumnHelper } from '@tanstack/react-table';
+import {useMemo, useRef, useState } from 'react';
 
 interface Seat {
   id?: number;
@@ -14,14 +16,14 @@ export const Route = createFileRoute('/protected/admin/$screenid/seats')({
   component: RouteComponent,
 });
 
+
+const columnHelper = createColumnHelper<Seat>();
+
 function RouteComponent() {
   const addData = useAddData();
   const removeData = useDeleteData();
   const editData = useEditData();
-  const screenId = useParams({
-    from: '/protected/admin/$screenid/seats',
-    select: (params) => params.screenid,
-  });
+  const screenId =Route.useParams().screenid;
 
   const [editState, setEditState] = useState('');
   const [seats, setSeats] = useState('');
@@ -31,7 +33,7 @@ function RouteComponent() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['seats', screenId],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:4000/api/seats/${screenId}`);
+      const res = await fetch(`http://localhost:4000/api/seats/all/${screenId}`);
       if (!res.ok) throw new Error('Failed to fetch seats');
       const json = await res.json();
       return json.data;
@@ -100,6 +102,26 @@ function RouteComponent() {
       alert('Failed to update seat — check JSON format.');
     }
   };
+
+   const column  = useMemo(() => {
+    return [
+
+      columnHelper.accessor('id', { header: 'ID' }),
+      columnHelper.accessor('row', { header: 'Row' }),
+      columnHelper.accessor('column', { header: 'Column' }),
+      columnHelper.display({
+        id: 'action', header: 'Action', cell: info => (
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={() => openDialog(info.row.original)}
+          >
+            Edit
+          </button>
+        )
+      }),
+    ];  
+  }, []);
+   
 
   // --- Loading skeleton ---
   if (isLoading)
@@ -190,44 +212,7 @@ function RouteComponent() {
         </button>
       </div>
 
-      {/* Seat Table */}
-      <div className="overflow-x-auto p-10">
-        <table className="table w-full">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Row</th>
-              <th>Column</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data && data.length > 0 ? (
-              data.map((seat: any) => (
-                <tr key={seat.id}>
-                  <td>{seat.id}</td>
-                  <td>{seat.row}</td>
-                  <td>{seat.column}</td>
-                  <td>
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => openDialog(seat)}
-                    >
-                      Edit
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={4} className="text-center py-2">
-                  No seats found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <Table data={data || []} columns={column} />
     </>
   );
 }

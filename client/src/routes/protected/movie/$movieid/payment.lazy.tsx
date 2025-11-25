@@ -80,24 +80,14 @@ function RouteComponent() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
 
-  /**
-   * Callback function passed to SeatSelection to receive updates.
-   */
+
   const handleSeatChange = useCallback((seats: Seat[]) => {
     setSelectedSeats(seats);
     console.log("Parent received seat update:", seats.length, "seats selected.");
-  }, []); // Memoize this function
+  }, []);
 
-  // --- NEW: Clear Seat Selection Logic ---
 
-  /**
-   * Clears the user's current seat selection by calling the backend API.
-   * Note: This requires the SeatSelection child component to listen for changes 
-   * in its props/state that trigger a re-fetch of seat data after this call succeeds.
-   * Assuming the SeatSelection component uses the `showId` (which is `Number(movieid)`) 
-   * to fetch seats, and will automatically refresh when its internal state changes 
-   * (e.g., in the case of a successful clear).
-   */
+
   const handleClearSelection = async () => {
     if (selectedSeats.length === 0) return;
     if (!userId) {
@@ -105,7 +95,6 @@ function RouteComponent() {
       return;
     }
 
-    // Use the showId (which is movieid) for the API call parameter 'id'
     const showId = Number(movieid); 
 
     try {
@@ -120,7 +109,6 @@ function RouteComponent() {
       const data = await res.json();
       
       if (res.ok) {
-        // Clear the local state immediately (though the child should also refresh)
         setSelectedSeats([]); 
         alert("Your seat selection has been cleared.");
       } else {
@@ -135,13 +123,10 @@ function RouteComponent() {
     }
   };
 
-  // ------------------------------------
 
-  // Calculation: Use useMemo for efficient total amount calculation.
   const totalAmountRs = selectedSeats.length * TICKET_PRICE;
-  const totalAmountPaisa = totalAmountRs * 100; // Total amount in paisa
+  const totalAmountPaisa = totalAmountRs * 100;
 
-  // Format seat labels for display
   const seatLabels = useMemo(() => {
     return selectedSeats.map(s => `${s.row}${s.column}`).join(', ');
   }, [selectedSeats]);

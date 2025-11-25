@@ -94,12 +94,16 @@ const bookSeats = inngest.createFunction(
   async ({ event }) => {
     try {
       const db = connectDb();
+      const now = new Date();
+      const time = now.toLocaleTimeString();
       const { id, userId, transaction_id, phone, pidx } = event.data;
       const result = await db
         .update(showSeats)
         .set({
           status: "BOOKED",
           booked_by: userId,
+          bookedTime: time as string,
+
         })
         .where(
           and(
@@ -110,7 +114,7 @@ const bookSeats = inngest.createFunction(
         )
         .execute();
 
-      await db
+      const data = await db
         .insert(tickets)
         .values({
           paymentMethod: "KHALTI",
@@ -120,7 +124,26 @@ const bookSeats = inngest.createFunction(
           transactionId: transaction_id,
           mobile: phone,
           pidx,
+          bookedTime: time as string,
         })
+        .returning();
+
+      const ticket_id = await data[0].id;
+      const bookedTime = await data[0].bookedTime;
+
+      await db
+        .update(showSeats)
+        .set({
+          ticketId: ticket_id,
+        })
+        .where(
+          and(
+            eq(showSeats.showId, id),
+            eq(showSeats.booked_by, userId),
+            eq(showSeats.status, "BOOKED"),
+            eq(showSeats.bookedTime, bookedTime),
+          ),
+        )
         .execute();
 
       return { success: true, updated: result.rowCount };

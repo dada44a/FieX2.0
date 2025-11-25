@@ -47,33 +47,6 @@ seatRoutes.get("/screen/:id", async (c) => {
   }
 });
 
-seatRoutes.get("/:id", async (c) => {
-  const { id } = c.req.param();
-  try {
-    const db = connectDb();
-    const seat = await db
-      .select()
-      .from(showSeats)
-      .where(eq(showSeats.showId, Number(id)));
-    if (seat.length === 0) {
-      return c.json({ message: `Seat with ID ${id} not found` }, 404);
-    }
-    const groupedSeats: Record<string, number[]> = {};
-    seat.forEach((s: any) => {
-      if (!groupedSeats[s.row]) {
-        groupedSeats[s.row] = [];
-      }
-      groupedSeats[s.row].push(s.column);
-    });
-    return c.json({ message: `Details of seat with ID ${id}`, data: seat });
-  } catch (error: any) {
-    return c.json(
-      { message: "Error fetching seat", error: error.message },
-      500,
-    );
-  }
-});
-
 seatRoutes.put("/inactive", async (c) => {
   try {
     const { showId, row, column, userId } = await c.req.json();
@@ -133,22 +106,9 @@ seatRoutes.put("/clear/:id", async (c) => {
 
 seatRoutes.put("/booked", async (c) => {
   try {
-    const {
-      id,
-      userId,
-      transaction_id,
-      mobile,
-      phone,
-      pidx,
-      showId,
-    } = await c.req.json();
-    if (
-      !id ||
-      !userId ||
-      !transaction_id ||
-      !mobile ||
-      !pidx
-    )
+    const { id, userId, transaction_id, mobile, phone, pidx, showId } =
+      await c.req.json();
+    if (!id || !userId || !transaction_id || !mobile || !pidx)
       return c.json({ message: "Missing Value" });
 
     await inngest.send({
@@ -160,7 +120,7 @@ seatRoutes.put("/booked", async (c) => {
         mobile,
         pidx,
         showId,
-        phone
+        phone,
       },
     });
 
@@ -209,7 +169,7 @@ seatRoutes.post("/:id", async (c) => {
   }
 });
 
-seatRoutes.get("/:id", async (c) => {
+seatRoutes.get("/all/:id", async (c) => {
   const { id } = c.req.param();
 
   try {
@@ -219,11 +179,8 @@ seatRoutes.get("/:id", async (c) => {
     const seatList = await db
       .select()
       .from(seats)
-      .where(eq(seats.screenId, Number(id)));
-
-    if (!seatList || seatList.length === 0) {
-      return c.json({ message: `No seats found for Screen ID ${id}` }, 404);
-    }
+      .where(eq(seats.screenId, Number(id)))
+      .execute();
 
     return c.json({ message: `Seats for Screen ID ${id}`, data: seatList });
   } catch (error: any) {
@@ -234,6 +191,32 @@ seatRoutes.get("/:id", async (c) => {
   }
 });
 
+seatRoutes.get("/:id", async (c) => {
+  const { id } = c.req.param();
+  try {
+    const db = connectDb();
+    const seat = await db
+      .select()
+      .from(showSeats)
+      .where(eq(showSeats.showId, Number(id)));
+    if (seat.length === 0) {
+      return c.json({ message: `Seat with ID ${id} not found` }, 404);
+    }
+    const groupedSeats: Record<string, number[]> = {};
+    seat.forEach((s: any) => {
+      if (!groupedSeats[s.row]) {
+        groupedSeats[s.row] = [];
+      }
+      groupedSeats[s.row].push(s.column);
+    });
+    return c.json({ message: `Details of seat with ID ${id}`, data: seat });
+  } catch (error: any) {
+    return c.json(
+      { message: "Error fetching seat", error: error.message },
+      500,
+    );
+  }
+});
 // update seat
 seatRoutes.put("/:id", async (c) => {
   const { id } = c.req.param();

@@ -4,7 +4,7 @@ import React from 'react'
 
 export const Navbar = React.memo(() => {
     return (
-        <div className="navbar bg-base-100 shadow-sm">
+        <div className="navbar bg-base-100 shadow-sm z-50">
             <div className="flex-1">
                 <Link to="/" className="btn btn-ghost text-xl">FireX</Link>
             </div>
