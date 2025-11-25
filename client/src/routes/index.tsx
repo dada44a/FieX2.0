@@ -48,7 +48,8 @@ function App() {
         <h1 className="text-4xl font-bold">#On Air</h1>
         <div className="py-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {isLoading &&
-            Array.from({ length: 4 }).map((_, index) => <CardSkeleton key={index} />)}
+            Array.from({ length: 4 }).map((_, index) => <CardSkeleton key={index} />)
+          }
 
           {isError && <p className="text-red-500">Failed to load movies</p>}
 
