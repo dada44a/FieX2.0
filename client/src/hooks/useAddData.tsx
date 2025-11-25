@@ -25,7 +25,7 @@ export const useAddData = () => {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: variables.queryKey });
-
+      
     }
   });
 };

@@ -1,11 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { createColumnHelper } from "@tanstack/react-table";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import Table from "../Table";
 import { useForm } from "@tanstack/react-form";
 import { useAddData, useDeleteData, useEditData } from "@/hooks/useAddData";
 import { useQuery } from "@tanstack/react-query";
-import { is } from "zod/v4/locales";
 import { LoadingTable } from "../loadingtable";
 
 interface Screen {
@@ -18,7 +17,6 @@ const ScreenManagement: React.FC = () => {
   const add = useAddData()
   const edit = useEditData()
   const deleteData = useDeleteData()
-  const [screens, setScreens] = useState<Screen[]>([]);
   const [formScreen, setFormScreen] = useState<{ id: number | null; name: string; price: string }>({
     id: null,
     name: "",
