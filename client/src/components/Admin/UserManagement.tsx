@@ -1,169 +1,145 @@
-import  { useEffect, useState } from "react";
+import { createColumnHelper } from "@tanstack/react-table";
+
+import { useMemo, useState } from "react";
+import Table from "../Table";
+import { useQuery } from "@tanstack/react-query";
+import { useForm } from "@tanstack/react-form";
+import { useDeleteData, useEditData } from "@/hooks/useAddData";
+
+// {
+//     "id": 6,
+//     "name": "ANISH GHIMIRE",
+//     "email": "anishbim22@oic.edu.np",
+//     "role": "ADMIN",
+//     "points": 0,
+//     "clerkId": "user_360XmSLBMIFWko3zCPFA2R8q5oc"
+//   }
+
+enum Role {
+  ADMIN = "ADMIN",
+  USER = "USER",
+}
 
 interface User {
   id: number;
   name: string;
   email: string;
-  role: string;
-  phone: string;
+  role: Role;
+  points: number;
+  clerkId: string;
 }
 
-const UserManagement = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [editingUserId, setEditingUserId] = useState<number | null>(null);
-  const [updatedRole, setUpdatedRole] = useState<string>("");
+const columnHelper = createColumnHelper<User>();
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch("http://localhost:8080/api/Users/all");
-        const data = await response.json();
-        setUsers(data);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-    fetchUsers();
+const UserManagement = () => {
+  const [users, setUsers] = useState<any>(null);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const edit = useEditData();
+  const deleteData = useDeleteData();
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['users'],
+    queryFn: async (): Promise<User[]> => {
+      const res = await fetch('http://localhost:4000/api/users');
+      if (!res.ok) throw new Error('Failed to fetch users');
+      return res.json();
+    }
+  })
+
+  const column = useMemo(() => {
+    return [
+      columnHelper.accessor('id', { header: 'ID' }),
+      columnHelper.accessor('name', { header: 'Name' }),
+      columnHelper.accessor('email', { header: 'Email' }),
+      columnHelper.accessor('role', { header: 'Role' }),
+      columnHelper.accessor('clerkId', { header: 'Clerk ID' }),
+      columnHelper.display({
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => {
+          const user = row.original;
+          return (
+            <div className="flex gap-2">
+              <button
+                className="btn btn-sm btn-neutral"
+                onClick={() => { setUsers(user.id); setIsEditing(true); }}
+              >
+                Edit
+              </button>
+              <button className="btn btn-sm btn-error" onClick={() => setUsers(user.id)}>Delete</button>
+            </div>
+          )
+        }
+      })
+    ];
   }, []);
 
-  const handleEditClick = (user: User) => {
-    setEditingUserId(user.id);
-    setUpdatedRole(user.role);
-  };
-
-  const handleSaveClick = async (userId: number) => {
-    // Optional: API call to update role
-    const updatedUsers = users.map((user) =>
-      user.id === userId ? { ...user, role: updatedRole } : user
-    );
-
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/Users/${userId}/update_role`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
+  const form = useForm({
+    defaultValues: {
+      role: '',
+    },
+    onSubmit: (values) => {
+      if (isEditing) {
+        // Update user role logic here
+        edit.mutateAsync({
+          link: `/api/users/${users}`,
+          datas: {
+            role: values.value.role,
           },
-          body: JSON.stringify({ role: updatedRole.toLowerCase() })
-        }
-      );
-      if (!response.ok) {
-        throw new Error("Failed to update user role");
+          queryKey: ['users']
+        })  
+      } else {
+        deleteData.mutateAsync({
+          link: `/api/users/${users}`,
+          queryKey: ['users']
+        })
+        
       }
-    } catch (error) {
-      console.error("Error updating user role:", error);
     }
-    setUsers(updatedUsers);
-    setEditingUserId(null);
-    setUpdatedRole("");
-  };
+  })
 
-  const handleCancelClick = () => {
-    setEditingUserId(null);
-    setUpdatedRole("");
-  };
-
-  const handleDeleteClick = async (userId: number) => {
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/Users/${userId}`,
-        {
-          method: "DELETE",
-        }
-      );
-      if (!response.ok) {
-        throw new Error("Failed to delete user");
-      }
-    } catch (error) {
-      console.error("Error deleting user:", error);
-    }
-    const updatedUsers = users.filter((user) => user.id !== userId);
-    setUsers(updatedUsers);
-  };
 
   return (
     <>
       <div className="flex flex-row items-center gap-2">
-        <input type="text" placeholder="Type here" className="input my-3 outline-0" />
-        <button className="btn btn-md btn-warning">Search</button>
+        <input type="text" placeholder="Type here" className="input my-3 outline-0" value={users} disabled/>
       </div>
-      <div className="overflow-x-auto">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Id</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Phone</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.length > 0 ? (
-              users.map((user) => (
-                <tr key={user.id}>
-                  <td>{user.id}</td>
-                  <td>
-                    <div className="font-bold">{user.name}</div>
-                  </td>
-                  <td>{user.email}</td>
-                  <td>
-                    {editingUserId === user.id ? (
-                      <input
-                        type="text"
-                        value={updatedRole}
-                        onChange={(e) => setUpdatedRole(e.target.value)}
-                        className="input input-sm"
-                      />
-                    ) : (
-                      <span>{user.role}</span>
-                    )}
-                  </td>
-                  <td>{user.phone || "N/A"}</td>
-                  <td>
-                    <div className="flex gap-2">
-                      {editingUserId === user.id ? (
-                        <>
-                          <button
-                            className="btn btn-sm btn-success"
-                            onClick={() => handleSaveClick(user.id)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="btn btn-sm btn-ghost"
-                            onClick={handleCancelClick}
-                          >
-                            Cancel
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            className="btn btn-sm btn-neutral"
-                            onClick={() => handleEditClick(user)}
-                          >
-                            Edit
-                          </button>
-                          <button className="btn btn-sm btn-error" onClick={() => handleDeleteClick(user.id)}>Delete</button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={6} className="text-center text-gray-500 py-4">
-                  No users found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+
+      <form className="flex gap-2" onSubmit={
+        (e) => {
+          e.preventDefault()
+          form.handleSubmit()
+        }
+      }>
+        <form.Field
+          name="role"
+          children={(field) => {
+            return (
+              <>
+                <input
+                  type="text"
+                  name={field.name}
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  placeholder="Role"
+                  className="input input-bordered"
+                />
+              </>
+            )
+          }}
+        />
+
+        <form.Subscribe
+          selector={(state) => [state.canSubmit, state.isSubmitting]}
+          children={([canSubmit, isSubmitting]) => (
+            <button type="submit" className="btn btn-primary" disabled={!canSubmit || isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Submit"}
+            </button>
+          )}
+        />
+      </form>
+
+      <Table data={data ? data : []} columns={column} />
     </>
   );
 };
