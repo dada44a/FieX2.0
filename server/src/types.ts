@@ -20,6 +20,3 @@ export type NewSeat = InferInsertModel<typeof Schema.seats>;
 export type User = InferSelectModel<typeof Schema.users>;
 export type NewUser = InferInsertModel<typeof Schema.users>;
 
-export type TicketSeat = InferInsertModel<typeof Schema.ticketSeats>;
-export type TicketSeatSelect = InferSelectModel<typeof Schema.ticketSeats>;
-

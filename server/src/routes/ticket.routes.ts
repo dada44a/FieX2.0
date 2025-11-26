@@ -78,8 +78,8 @@ ticketRoutes.get("/:id", async (c) => {
     const ticketsWithSeats = ticketsForUser.map((ticket) => {
       // Get seats for this ticket
       const seatsForThisTicket = seats
-        .filter((s) => s.ticketId === ticket.id)
-        .map((s) => `${s.row}${s.column}`); // e.g. "A1", "B2"
+        .filter((s:any) => s.ticketId === ticket.id)
+        .map((s:any) => `${s.row}${s.column}`); // e.g. "A1", "B2"
 
       return {
         ...ticket,
