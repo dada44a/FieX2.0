@@ -4,7 +4,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createColumnHelper } from '@tanstack/react-table';
 import React from 'react';
 import { Bar, Pie, Line } from 'react-chartjs-2';
-export const Route = createFileRoute('/protected/reports/')({
+export const Route = createFileRoute('/protected/admin/reports/')({
   component: RouteComponent,
 });
 

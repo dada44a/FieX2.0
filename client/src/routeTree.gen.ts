@@ -13,10 +13,11 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProtectedRouteRouteImport } from './routes/protected/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProtectedReportsIndexRouteImport } from './routes/protected/reports/index'
+import { Route as ProtectedAdminRouteRouteImport } from './routes/protected/admin/route'
 import { Route as ProtectedAdminIndexRouteImport } from './routes/protected/admin/index'
 import { Route as ProtectedMoviePaymentSucessRouteImport } from './routes/protected/movie/payment-sucess'
 import { Route as ProtectedMoviePaymentSuccessRouteImport } from './routes/protected/movie/payment-success'
+import { Route as ProtectedAdminReportsIndexRouteImport } from './routes/protected/admin/reports/index'
 import { Route as ProtectedAdminScreenidSeatsRouteImport } from './routes/protected/admin/$screenid/seats'
 import { Route as ProtectedUserProfileTicketidTicketRouteImport } from './routes/protected/user/profile/$ticketid/ticket'
 
@@ -55,28 +56,28 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProtectedReportsIndexRoute = ProtectedReportsIndexRouteImport.update({
-  id: '/reports/',
-  path: '/reports/',
+const ProtectedAdminRouteRoute = ProtectedAdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => ProtectedRouteRoute,
 } as any)
 const ProtectedAdminIndexRoute = ProtectedAdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => ProtectedRouteRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => ProtectedAdminRouteRoute,
 } as any)
 const ProtectedAdminReportsLazyRoute =
   ProtectedAdminReportsLazyRouteImport.update({
-    id: '/admin/reports',
-    path: '/admin/reports',
-    getParentRoute: () => ProtectedRouteRoute,
+    id: '/reports',
+    path: '/reports',
+    getParentRoute: () => ProtectedAdminRouteRoute,
   } as any).lazy(() =>
     import('./routes/protected/admin/reports.lazy').then((d) => d.Route),
   )
 const ProtectedAdminAddLazyRoute = ProtectedAdminAddLazyRouteImport.update({
-  id: '/admin/add',
-  path: '/admin/add',
-  getParentRoute: () => ProtectedRouteRoute,
+  id: '/add',
+  path: '/add',
+  getParentRoute: () => ProtectedAdminRouteRoute,
 } as any).lazy(() =>
   import('./routes/protected/admin/add.lazy').then((d) => d.Route),
 )
@@ -108,6 +109,12 @@ const ProtectedMovieMovieidIndexLazyRoute =
   } as any).lazy(() =>
     import('./routes/protected/movie/$movieid/index.lazy').then((d) => d.Route),
   )
+const ProtectedAdminReportsIndexRoute =
+  ProtectedAdminReportsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ProtectedAdminReportsLazyRoute,
+  } as any)
 const ProtectedMovieMovieidPaymentLazyRoute =
   ProtectedMovieMovieidPaymentLazyRouteImport.update({
     id: '/movie/$movieid/payment',
@@ -120,25 +127,25 @@ const ProtectedMovieMovieidPaymentLazyRoute =
   )
 const ProtectedAdminEditEditLazyRoute =
   ProtectedAdminEditEditLazyRouteImport.update({
-    id: '/admin/edit/$edit',
-    path: '/admin/edit/$edit',
-    getParentRoute: () => ProtectedRouteRoute,
+    id: '/edit/$edit',
+    path: '/edit/$edit',
+    getParentRoute: () => ProtectedAdminRouteRoute,
   } as any).lazy(() =>
     import('./routes/protected/admin/edit/$edit.lazy').then((d) => d.Route),
   )
 const ProtectedAdminDeleteDeleteLazyRoute =
   ProtectedAdminDeleteDeleteLazyRouteImport.update({
-    id: '/admin/delete/$delete',
-    path: '/admin/delete/$delete',
-    getParentRoute: () => ProtectedRouteRoute,
+    id: '/delete/$delete',
+    path: '/delete/$delete',
+    getParentRoute: () => ProtectedAdminRouteRoute,
   } as any).lazy(() =>
     import('./routes/protected/admin/delete/$delete.lazy').then((d) => d.Route),
   )
 const ProtectedAdminScreenidSeatsRoute =
   ProtectedAdminScreenidSeatsRouteImport.update({
-    id: '/admin/$screenid/seats',
-    path: '/admin/$screenid/seats',
-    getParentRoute: () => ProtectedRouteRoute,
+    id: '/$screenid/seats',
+    path: '/$screenid/seats',
+    getParentRoute: () => ProtectedAdminRouteRoute,
   } as any)
 const ProtectedUserProfileTicketidIndexLazyRoute =
   ProtectedUserProfileTicketidIndexLazyRouteImport.update({
@@ -160,16 +167,17 @@ const ProtectedUserProfileTicketidTicketRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/protected': typeof ProtectedRouteRouteWithChildren
+  '/protected/admin': typeof ProtectedAdminRouteRouteWithChildren
   '/protected/movie/payment-success': typeof ProtectedMoviePaymentSuccessRoute
   '/protected/movie/payment-sucess': typeof ProtectedMoviePaymentSucessRoute
   '/protected/admin/add': typeof ProtectedAdminAddLazyRoute
-  '/protected/admin/reports': typeof ProtectedAdminReportsLazyRoute
-  '/protected/admin': typeof ProtectedAdminIndexRoute
-  '/protected/reports': typeof ProtectedReportsIndexRoute
+  '/protected/admin/reports': typeof ProtectedAdminReportsLazyRouteWithChildren
+  '/protected/admin/': typeof ProtectedAdminIndexRoute
   '/protected/admin/$screenid/seats': typeof ProtectedAdminScreenidSeatsRoute
   '/protected/admin/delete/$delete': typeof ProtectedAdminDeleteDeleteLazyRoute
   '/protected/admin/edit/$edit': typeof ProtectedAdminEditEditLazyRoute
   '/protected/movie/$movieid/payment': typeof ProtectedMovieMovieidPaymentLazyRoute
+  '/protected/admin/reports/': typeof ProtectedAdminReportsIndexRoute
   '/protected/movie/$movieid': typeof ProtectedMovieMovieidIndexLazyRoute
   '/protected/user/profile': typeof ProtectedUserProfileIndexLazyRoute
   '/protected/user/profile/$ticketid/ticket': typeof ProtectedUserProfileTicketidTicketRoute
@@ -181,13 +189,12 @@ export interface FileRoutesByTo {
   '/protected/movie/payment-success': typeof ProtectedMoviePaymentSuccessRoute
   '/protected/movie/payment-sucess': typeof ProtectedMoviePaymentSucessRoute
   '/protected/admin/add': typeof ProtectedAdminAddLazyRoute
-  '/protected/admin/reports': typeof ProtectedAdminReportsLazyRoute
   '/protected/admin': typeof ProtectedAdminIndexRoute
-  '/protected/reports': typeof ProtectedReportsIndexRoute
   '/protected/admin/$screenid/seats': typeof ProtectedAdminScreenidSeatsRoute
   '/protected/admin/delete/$delete': typeof ProtectedAdminDeleteDeleteLazyRoute
   '/protected/admin/edit/$edit': typeof ProtectedAdminEditEditLazyRoute
   '/protected/movie/$movieid/payment': typeof ProtectedMovieMovieidPaymentLazyRoute
+  '/protected/admin/reports': typeof ProtectedAdminReportsIndexRoute
   '/protected/movie/$movieid': typeof ProtectedMovieMovieidIndexLazyRoute
   '/protected/user/profile': typeof ProtectedUserProfileIndexLazyRoute
   '/protected/user/profile/$ticketid/ticket': typeof ProtectedUserProfileTicketidTicketRoute
@@ -197,16 +204,17 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/protected': typeof ProtectedRouteRouteWithChildren
+  '/protected/admin': typeof ProtectedAdminRouteRouteWithChildren
   '/protected/movie/payment-success': typeof ProtectedMoviePaymentSuccessRoute
   '/protected/movie/payment-sucess': typeof ProtectedMoviePaymentSucessRoute
   '/protected/admin/add': typeof ProtectedAdminAddLazyRoute
-  '/protected/admin/reports': typeof ProtectedAdminReportsLazyRoute
+  '/protected/admin/reports': typeof ProtectedAdminReportsLazyRouteWithChildren
   '/protected/admin/': typeof ProtectedAdminIndexRoute
-  '/protected/reports/': typeof ProtectedReportsIndexRoute
   '/protected/admin/$screenid/seats': typeof ProtectedAdminScreenidSeatsRoute
   '/protected/admin/delete/$delete': typeof ProtectedAdminDeleteDeleteLazyRoute
   '/protected/admin/edit/$edit': typeof ProtectedAdminEditEditLazyRoute
   '/protected/movie/$movieid/payment': typeof ProtectedMovieMovieidPaymentLazyRoute
+  '/protected/admin/reports/': typeof ProtectedAdminReportsIndexRoute
   '/protected/movie/$movieid/': typeof ProtectedMovieMovieidIndexLazyRoute
   '/protected/user/profile/': typeof ProtectedUserProfileIndexLazyRoute
   '/protected/user/profile/$ticketid/ticket': typeof ProtectedUserProfileTicketidTicketRoute
@@ -217,16 +225,17 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/protected'
+    | '/protected/admin'
     | '/protected/movie/payment-success'
     | '/protected/movie/payment-sucess'
     | '/protected/admin/add'
     | '/protected/admin/reports'
-    | '/protected/admin'
-    | '/protected/reports'
+    | '/protected/admin/'
     | '/protected/admin/$screenid/seats'
     | '/protected/admin/delete/$delete'
     | '/protected/admin/edit/$edit'
     | '/protected/movie/$movieid/payment'
+    | '/protected/admin/reports/'
     | '/protected/movie/$movieid'
     | '/protected/user/profile'
     | '/protected/user/profile/$ticketid/ticket'
@@ -238,13 +247,12 @@ export interface FileRouteTypes {
     | '/protected/movie/payment-success'
     | '/protected/movie/payment-sucess'
     | '/protected/admin/add'
-    | '/protected/admin/reports'
     | '/protected/admin'
-    | '/protected/reports'
     | '/protected/admin/$screenid/seats'
     | '/protected/admin/delete/$delete'
     | '/protected/admin/edit/$edit'
     | '/protected/movie/$movieid/payment'
+    | '/protected/admin/reports'
     | '/protected/movie/$movieid'
     | '/protected/user/profile'
     | '/protected/user/profile/$ticketid/ticket'
@@ -253,16 +261,17 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/protected'
+    | '/protected/admin'
     | '/protected/movie/payment-success'
     | '/protected/movie/payment-sucess'
     | '/protected/admin/add'
     | '/protected/admin/reports'
     | '/protected/admin/'
-    | '/protected/reports/'
     | '/protected/admin/$screenid/seats'
     | '/protected/admin/delete/$delete'
     | '/protected/admin/edit/$edit'
     | '/protected/movie/$movieid/payment'
+    | '/protected/admin/reports/'
     | '/protected/movie/$movieid/'
     | '/protected/user/profile/'
     | '/protected/user/profile/$ticketid/ticket'
@@ -290,33 +299,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/protected/reports/': {
-      id: '/protected/reports/'
-      path: '/reports'
-      fullPath: '/protected/reports'
-      preLoaderRoute: typeof ProtectedReportsIndexRouteImport
+    '/protected/admin': {
+      id: '/protected/admin'
+      path: '/admin'
+      fullPath: '/protected/admin'
+      preLoaderRoute: typeof ProtectedAdminRouteRouteImport
       parentRoute: typeof ProtectedRouteRoute
     }
     '/protected/admin/': {
       id: '/protected/admin/'
-      path: '/admin'
-      fullPath: '/protected/admin'
+      path: '/'
+      fullPath: '/protected/admin/'
       preLoaderRoute: typeof ProtectedAdminIndexRouteImport
-      parentRoute: typeof ProtectedRouteRoute
+      parentRoute: typeof ProtectedAdminRouteRoute
     }
     '/protected/admin/reports': {
       id: '/protected/admin/reports'
-      path: '/admin/reports'
+      path: '/reports'
       fullPath: '/protected/admin/reports'
       preLoaderRoute: typeof ProtectedAdminReportsLazyRouteImport
-      parentRoute: typeof ProtectedRouteRoute
+      parentRoute: typeof ProtectedAdminRouteRoute
     }
     '/protected/admin/add': {
       id: '/protected/admin/add'
-      path: '/admin/add'
+      path: '/add'
       fullPath: '/protected/admin/add'
       preLoaderRoute: typeof ProtectedAdminAddLazyRouteImport
-      parentRoute: typeof ProtectedRouteRoute
+      parentRoute: typeof ProtectedAdminRouteRoute
     }
     '/protected/movie/payment-sucess': {
       id: '/protected/movie/payment-sucess'
@@ -346,6 +355,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedMovieMovieidIndexLazyRouteImport
       parentRoute: typeof ProtectedRouteRoute
     }
+    '/protected/admin/reports/': {
+      id: '/protected/admin/reports/'
+      path: '/'
+      fullPath: '/protected/admin/reports/'
+      preLoaderRoute: typeof ProtectedAdminReportsIndexRouteImport
+      parentRoute: typeof ProtectedAdminReportsLazyRoute
+    }
     '/protected/movie/$movieid/payment': {
       id: '/protected/movie/$movieid/payment'
       path: '/movie/$movieid/payment'
@@ -355,24 +371,24 @@ declare module '@tanstack/react-router' {
     }
     '/protected/admin/edit/$edit': {
       id: '/protected/admin/edit/$edit'
-      path: '/admin/edit/$edit'
+      path: '/edit/$edit'
       fullPath: '/protected/admin/edit/$edit'
       preLoaderRoute: typeof ProtectedAdminEditEditLazyRouteImport
-      parentRoute: typeof ProtectedRouteRoute
+      parentRoute: typeof ProtectedAdminRouteRoute
     }
     '/protected/admin/delete/$delete': {
       id: '/protected/admin/delete/$delete'
-      path: '/admin/delete/$delete'
+      path: '/delete/$delete'
       fullPath: '/protected/admin/delete/$delete'
       preLoaderRoute: typeof ProtectedAdminDeleteDeleteLazyRouteImport
-      parentRoute: typeof ProtectedRouteRoute
+      parentRoute: typeof ProtectedAdminRouteRoute
     }
     '/protected/admin/$screenid/seats': {
       id: '/protected/admin/$screenid/seats'
-      path: '/admin/$screenid/seats'
+      path: '/$screenid/seats'
       fullPath: '/protected/admin/$screenid/seats'
       preLoaderRoute: typeof ProtectedAdminScreenidSeatsRouteImport
-      parentRoute: typeof ProtectedRouteRoute
+      parentRoute: typeof ProtectedAdminRouteRoute
     }
     '/protected/user/profile/$ticketid/': {
       id: '/protected/user/profile/$ticketid/'
@@ -391,16 +407,45 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface ProtectedRouteRouteChildren {
-  ProtectedMoviePaymentSuccessRoute: typeof ProtectedMoviePaymentSuccessRoute
-  ProtectedMoviePaymentSucessRoute: typeof ProtectedMoviePaymentSucessRoute
+interface ProtectedAdminReportsLazyRouteChildren {
+  ProtectedAdminReportsIndexRoute: typeof ProtectedAdminReportsIndexRoute
+}
+
+const ProtectedAdminReportsLazyRouteChildren: ProtectedAdminReportsLazyRouteChildren =
+  {
+    ProtectedAdminReportsIndexRoute: ProtectedAdminReportsIndexRoute,
+  }
+
+const ProtectedAdminReportsLazyRouteWithChildren =
+  ProtectedAdminReportsLazyRoute._addFileChildren(
+    ProtectedAdminReportsLazyRouteChildren,
+  )
+
+interface ProtectedAdminRouteRouteChildren {
   ProtectedAdminAddLazyRoute: typeof ProtectedAdminAddLazyRoute
-  ProtectedAdminReportsLazyRoute: typeof ProtectedAdminReportsLazyRoute
+  ProtectedAdminReportsLazyRoute: typeof ProtectedAdminReportsLazyRouteWithChildren
   ProtectedAdminIndexRoute: typeof ProtectedAdminIndexRoute
-  ProtectedReportsIndexRoute: typeof ProtectedReportsIndexRoute
   ProtectedAdminScreenidSeatsRoute: typeof ProtectedAdminScreenidSeatsRoute
   ProtectedAdminDeleteDeleteLazyRoute: typeof ProtectedAdminDeleteDeleteLazyRoute
   ProtectedAdminEditEditLazyRoute: typeof ProtectedAdminEditEditLazyRoute
+}
+
+const ProtectedAdminRouteRouteChildren: ProtectedAdminRouteRouteChildren = {
+  ProtectedAdminAddLazyRoute: ProtectedAdminAddLazyRoute,
+  ProtectedAdminReportsLazyRoute: ProtectedAdminReportsLazyRouteWithChildren,
+  ProtectedAdminIndexRoute: ProtectedAdminIndexRoute,
+  ProtectedAdminScreenidSeatsRoute: ProtectedAdminScreenidSeatsRoute,
+  ProtectedAdminDeleteDeleteLazyRoute: ProtectedAdminDeleteDeleteLazyRoute,
+  ProtectedAdminEditEditLazyRoute: ProtectedAdminEditEditLazyRoute,
+}
+
+const ProtectedAdminRouteRouteWithChildren =
+  ProtectedAdminRouteRoute._addFileChildren(ProtectedAdminRouteRouteChildren)
+
+interface ProtectedRouteRouteChildren {
+  ProtectedAdminRouteRoute: typeof ProtectedAdminRouteRouteWithChildren
+  ProtectedMoviePaymentSuccessRoute: typeof ProtectedMoviePaymentSuccessRoute
+  ProtectedMoviePaymentSucessRoute: typeof ProtectedMoviePaymentSucessRoute
   ProtectedMovieMovieidPaymentLazyRoute: typeof ProtectedMovieMovieidPaymentLazyRoute
   ProtectedMovieMovieidIndexLazyRoute: typeof ProtectedMovieMovieidIndexLazyRoute
   ProtectedUserProfileIndexLazyRoute: typeof ProtectedUserProfileIndexLazyRoute
@@ -409,15 +454,9 @@ interface ProtectedRouteRouteChildren {
 }
 
 const ProtectedRouteRouteChildren: ProtectedRouteRouteChildren = {
+  ProtectedAdminRouteRoute: ProtectedAdminRouteRouteWithChildren,
   ProtectedMoviePaymentSuccessRoute: ProtectedMoviePaymentSuccessRoute,
   ProtectedMoviePaymentSucessRoute: ProtectedMoviePaymentSucessRoute,
-  ProtectedAdminAddLazyRoute: ProtectedAdminAddLazyRoute,
-  ProtectedAdminReportsLazyRoute: ProtectedAdminReportsLazyRoute,
-  ProtectedAdminIndexRoute: ProtectedAdminIndexRoute,
-  ProtectedReportsIndexRoute: ProtectedReportsIndexRoute,
-  ProtectedAdminScreenidSeatsRoute: ProtectedAdminScreenidSeatsRoute,
-  ProtectedAdminDeleteDeleteLazyRoute: ProtectedAdminDeleteDeleteLazyRoute,
-  ProtectedAdminEditEditLazyRoute: ProtectedAdminEditEditLazyRoute,
   ProtectedMovieMovieidPaymentLazyRoute: ProtectedMovieMovieidPaymentLazyRoute,
   ProtectedMovieMovieidIndexLazyRoute: ProtectedMovieMovieidIndexLazyRoute,
   ProtectedUserProfileIndexLazyRoute: ProtectedUserProfileIndexLazyRoute,

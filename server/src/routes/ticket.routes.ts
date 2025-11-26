@@ -3,7 +3,6 @@ import { connectDb } from "../db/init.js";
 import { movies, screens, shows, showSeats, tickets, users } from "../db/schema.js";
 import { and, eq, inArray } from "drizzle-orm/sql/expressions/conditions";
 import type { NewTicket, Ticket } from "../types.js";
-import { updateUserPoints } from "./user.routes.js";
 
 const ticketRoutes = new Hono();
 

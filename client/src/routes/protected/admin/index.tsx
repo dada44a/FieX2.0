@@ -38,7 +38,6 @@ function RouteComponent() {
   })
 
   isError && <p className="text-red-500">Failed to load data</p>;
-
   return (
     <main className="min-h-screen py-8 px-8">
       <div className="cineverse-container">

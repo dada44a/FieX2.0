@@ -29,6 +29,7 @@
     "@tanstack/router-plugin": "^1.132.0",
     "axios": "^1.13.1",
     "chart.js": "^4.5.1",
+    "jotai": "^2.15.1",
     "lucide-react": "^0.545.0",
     "react": "^19.2.0",
     "react-chartjs-2": "^5.3.1",

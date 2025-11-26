@@ -11,14 +11,14 @@ import { routeTree } from './routeTree.gen'
 import './styles.css'
 import reportWebVitals from './reportWebVitals.ts'
 
-
 // Create a new router instance
 
 const TanStackQueryProviderContext = TanStackQueryProvider.getContext()
 const router = createRouter({
   routeTree,
   context: {
-    ...TanStackQueryProviderContext,
+    ...TanStackQueryProviderContext, // Add auth to the router context
+    
   },
   defaultPreload: 'intent',
   scrollRestoration: true,
@@ -44,7 +44,7 @@ if (rootElement && !rootElement.innerHTML) {
     <StrictMode>
       <TanStackQueryProvider.Provider {...TanStackQueryProviderContext}>
 
-          <RouterProvider router={router} />
+          <RouterProvider router={router}/>
   
       </TanStackQueryProvider.Provider>
     </StrictMode>,

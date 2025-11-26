@@ -15,9 +15,12 @@ if (!PUBLISHABLE_KEY) {
   throw new Error('Missing Publishable Key')
 }
 
+
+
 interface MyRouterContext {
   queryClient: QueryClient
 }
+
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   component: () => (
@@ -25,8 +28,8 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
       <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
         <Navbar />
+        <Outlet />
 
-          <Outlet />
         <Footer />
       </ClerkProvider>
       <TanStackDevtools
