@@ -88,6 +88,7 @@ const UserManagement = () => {
           },
           queryKey: ['users']
         })  
+        setIsEditing(false);
       } else {
         deleteData.mutateAsync({
           link: `/api/users/${users}`,
