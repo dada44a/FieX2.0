@@ -8,11 +8,13 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@clerk/backend": "^2.24.0",
+    "@hono/clerk-auth": "^3.0.3",
     "@hono/node-server": "^1.19.5",
     "@neondatabase/serverless": "^1.0.2",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.7",
-    "hono": "^4.10.3",
+    "hono": "^4.10.6",
     "inngest": "^3.45.1"
   },
   "devDependencies": {

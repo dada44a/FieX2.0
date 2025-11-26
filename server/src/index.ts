@@ -13,11 +13,13 @@ import { functions, inngest } from "./inngest/index.js";
 import { serve as InngestServe } from "inngest/hono";
 import testRoutes from "./routes/test.route.js";
 import { reportsRoutes } from "./routes/reports.routes.js";
+import { clerkMiddleware } from "@hono/clerk-auth";
 
 export const app = new Hono();
 
 app.use("*", prettyJSON());
 app.use("*", cors());
+app.use("/", clerkMiddleware())
 
 app.use("/api/inngest", InngestServe({ client: inngest, functions}));
 // routes
