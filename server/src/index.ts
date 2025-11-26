@@ -11,9 +11,6 @@ import ticketRoutes from "./routes/ticket.routes.js";
 import { cors } from "hono/cors";
 import { functions, inngest } from "./inngest/index.js";
 import { serve as InngestServe } from "inngest/hono";
-import { seats, showSeats } from "./db/schema.js";
-import { connectDb } from "./db/init.js";
-import { eq } from "drizzle-orm";
 import testRoutes from "./routes/test.route.js";
 import { reportsRoutes } from "./routes/reports.routes.js";
 
@@ -84,12 +81,4 @@ app.post("/initiate", async (c) => {
   }
 });
 
-serve(
-  {
-    fetch: app.fetch,
-    port: 4000,
-  },
-  (info) => {
-    console.log(`Server is running on http://localhost:${info.port}`);
-  },
-);
+export default app.fetch;
