@@ -15,13 +15,14 @@ import { seats, showSeats } from "./db/schema.js";
 import { connectDb } from "./db/init.js";
 import { eq } from "drizzle-orm";
 import testRoutes from "./routes/test.route.js";
+import { reportsRoutes } from "./routes/reports.routes.js";
 
 export const app = new Hono();
 
 app.use("*", prettyJSON());
 app.use("*", cors());
 
-app.use("/api/inngest", InngestServe({ client: inngest, functions }));
+app.use("/api/inngest", InngestServe({ client: inngest, functions}));
 // routes
 app.route("/api/seats", seatRoutes);
 app.route("/api/screens", screenRoutes);
@@ -30,6 +31,7 @@ app.route("/api/users", userRoutes);
 app.route("/api/shows", showRoutes);
 app.route("/api/tickets", ticketRoutes);
 app.route("/api/test", testRoutes);
+app.route("/api/reports", reportsRoutes);
 
 app.get("/", (c) => {
   return c.json({ message: "Hello, World!" });

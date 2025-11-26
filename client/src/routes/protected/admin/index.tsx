@@ -1,14 +1,22 @@
 
 import MovieManagement from '@/components/Admin/MovieManagement';
 import Card from '@/components/Card';
+import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router'
-import { TrendingUp, TrendingDown } from "lucide-react";
 import React, { Suspense } from 'react';
 import { useState } from 'react';
+
+
+interface MonthlyStatsResponse{
+  month: string;
+  totalMovies: number;
+  totalShows: number;
+  totalBookings: number;
+  totalRevenue: string;
+}
 export const Route = createFileRoute('/protected/admin/')({
   component: RouteComponent,
 })
-
 
 const ScreenManagement = React.lazy(() => import('@/components/Admin/ScreenManagement'));
 const ShowManagement = React.lazy(() => import('@/components/Admin/ShowManagement'));
@@ -19,42 +27,50 @@ const UserManagement = React.lazy(() => import('@/components/Admin/UserManagemen
 
 function RouteComponent() {
   const [tabs, setTabs] = useState(0);
+
+  const {data, isLoading, isError} = useQuery({
+    queryKey: ['monthly-stats'],
+    queryFn: async (): Promise<MonthlyStatsResponse> => {
+      const res = await fetch('http://localhost:4000/api/reports/monthly-stats');
+      if(!res.ok) throw new Error('Failed to fetch monthly stats');
+      return res.json();
+    }   
+  })
+
+  isError && <p className="text-red-500">Failed to load data</p>;
+
   return (
     <main className="min-h-screen py-8 px-8">
       <div className="cineverse-container">
         <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card title="Total Movies">
-            <p className="text-2xl font-bold">6</p>
-            <div className="flex items-center text-gray-400">
-              <TrendingUp className="mr-1 h-3 w-3 text-green-500 " />
-              <TrendingDown className="mr-1 h-3 w-3 text-red-400 hidden" />
-              <p className="text-[12px]">+2 this week</p>
-            </div>
+            {isLoading ? (
+              <div className='skeleton w-full h-5'></div>
+            ) : (  
+            <p className="text-2xl font-bold">{data?.totalMovies ?? '-'}</p>
+            )}
           </Card>
           <Card title="Total Shows">
-            <p className="text-2xl font-bold">6</p>
-            <div className="flex items-center text-gray-400">
-              <TrendingUp className="mr-1 h-3 w-3 text-green-500 hidden" />
-              <TrendingDown className="mr-1 h-3 w-3 text-red-400" />
-              <p className="text-[12px]">+2 this week</p>
-            </div>
+            {isLoading ? (
+              <div className='skeleton w-full h-5'></div>
+            ) : (  
+            <p className="text-2xl font-bold">{data?.totalShows ?? '-'}</p>
+            )}
           </Card>
           <Card title="Total Bookings">
-            <p className="text-2xl font-bold">6</p>
-            <div className="flex items-center text-gray-400">
-              <TrendingUp className="mr-1 h-3 w-3 text-green-500 " />
-              <TrendingDown className="mr-1 h-3 w-3 text-red-400 hidden" />
-              <p className="text-[12px]">+2 this week</p>
-            </div>
+            {isLoading ? (
+              <div className='skeleton w-full h-5'></div>
+            ) : (  
+            <p className="text-2xl font-bold">{data?.totalBookings ?? '-'}</p>
+            )}
           </Card>
           <Card title="Total Revenue">
-            <p className="text-2xl font-bold">6</p>
-            <div className="flex items-center text-gray-400">
-              <TrendingUp className="mr-1 h-3 w-3 text-green-500 hidden" />
-              <TrendingDown className="mr-1 h-3 w-3 text-red-400" />
-              <p className="text-[12px]">+2 this week</p>
-            </div>
+            {isLoading ? (
+              <div className='skeleton w-full h-5'></div>
+            ) : (  
+            <p className="text-2xl font-bold">Rs. {data?.totalRevenue ?? '-'}</p>
+            )}
           </Card>
         </div>
 

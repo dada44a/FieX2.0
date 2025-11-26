@@ -13,6 +13,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProtectedRouteRouteImport } from './routes/protected/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProtectedReportsIndexRouteImport } from './routes/protected/reports/index'
 import { Route as ProtectedAdminIndexRouteImport } from './routes/protected/admin/index'
 import { Route as ProtectedMoviePaymentSucessRouteImport } from './routes/protected/movie/payment-sucess'
 import { Route as ProtectedMoviePaymentSuccessRouteImport } from './routes/protected/movie/payment-success'
@@ -53,6 +54,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ProtectedReportsIndexRoute = ProtectedReportsIndexRouteImport.update({
+  id: '/reports/',
+  path: '/reports/',
+  getParentRoute: () => ProtectedRouteRoute,
 } as any)
 const ProtectedAdminIndexRoute = ProtectedAdminIndexRouteImport.update({
   id: '/admin/',
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/protected/admin/add': typeof ProtectedAdminAddLazyRoute
   '/protected/admin/reports': typeof ProtectedAdminReportsLazyRoute
   '/protected/admin': typeof ProtectedAdminIndexRoute
+  '/protected/reports': typeof ProtectedReportsIndexRoute
   '/protected/admin/$screenid/seats': typeof ProtectedAdminScreenidSeatsRoute
   '/protected/admin/delete/$delete': typeof ProtectedAdminDeleteDeleteLazyRoute
   '/protected/admin/edit/$edit': typeof ProtectedAdminEditEditLazyRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByTo {
   '/protected/admin/add': typeof ProtectedAdminAddLazyRoute
   '/protected/admin/reports': typeof ProtectedAdminReportsLazyRoute
   '/protected/admin': typeof ProtectedAdminIndexRoute
+  '/protected/reports': typeof ProtectedReportsIndexRoute
   '/protected/admin/$screenid/seats': typeof ProtectedAdminScreenidSeatsRoute
   '/protected/admin/delete/$delete': typeof ProtectedAdminDeleteDeleteLazyRoute
   '/protected/admin/edit/$edit': typeof ProtectedAdminEditEditLazyRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/protected/admin/add': typeof ProtectedAdminAddLazyRoute
   '/protected/admin/reports': typeof ProtectedAdminReportsLazyRoute
   '/protected/admin/': typeof ProtectedAdminIndexRoute
+  '/protected/reports/': typeof ProtectedReportsIndexRoute
   '/protected/admin/$screenid/seats': typeof ProtectedAdminScreenidSeatsRoute
   '/protected/admin/delete/$delete': typeof ProtectedAdminDeleteDeleteLazyRoute
   '/protected/admin/edit/$edit': typeof ProtectedAdminEditEditLazyRoute
@@ -213,6 +222,7 @@ export interface FileRouteTypes {
     | '/protected/admin/add'
     | '/protected/admin/reports'
     | '/protected/admin'
+    | '/protected/reports'
     | '/protected/admin/$screenid/seats'
     | '/protected/admin/delete/$delete'
     | '/protected/admin/edit/$edit'
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/protected/admin/add'
     | '/protected/admin/reports'
     | '/protected/admin'
+    | '/protected/reports'
     | '/protected/admin/$screenid/seats'
     | '/protected/admin/delete/$delete'
     | '/protected/admin/edit/$edit'
@@ -247,6 +258,7 @@ export interface FileRouteTypes {
     | '/protected/admin/add'
     | '/protected/admin/reports'
     | '/protected/admin/'
+    | '/protected/reports/'
     | '/protected/admin/$screenid/seats'
     | '/protected/admin/delete/$delete'
     | '/protected/admin/edit/$edit'
@@ -277,6 +289,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/protected/reports/': {
+      id: '/protected/reports/'
+      path: '/reports'
+      fullPath: '/protected/reports'
+      preLoaderRoute: typeof ProtectedReportsIndexRouteImport
+      parentRoute: typeof ProtectedRouteRoute
     }
     '/protected/admin/': {
       id: '/protected/admin/'
@@ -378,6 +397,7 @@ interface ProtectedRouteRouteChildren {
   ProtectedAdminAddLazyRoute: typeof ProtectedAdminAddLazyRoute
   ProtectedAdminReportsLazyRoute: typeof ProtectedAdminReportsLazyRoute
   ProtectedAdminIndexRoute: typeof ProtectedAdminIndexRoute
+  ProtectedReportsIndexRoute: typeof ProtectedReportsIndexRoute
   ProtectedAdminScreenidSeatsRoute: typeof ProtectedAdminScreenidSeatsRoute
   ProtectedAdminDeleteDeleteLazyRoute: typeof ProtectedAdminDeleteDeleteLazyRoute
   ProtectedAdminEditEditLazyRoute: typeof ProtectedAdminEditEditLazyRoute
@@ -394,6 +414,7 @@ const ProtectedRouteRouteChildren: ProtectedRouteRouteChildren = {
   ProtectedAdminAddLazyRoute: ProtectedAdminAddLazyRoute,
   ProtectedAdminReportsLazyRoute: ProtectedAdminReportsLazyRoute,
   ProtectedAdminIndexRoute: ProtectedAdminIndexRoute,
+  ProtectedReportsIndexRoute: ProtectedReportsIndexRoute,
   ProtectedAdminScreenidSeatsRoute: ProtectedAdminScreenidSeatsRoute,
   ProtectedAdminDeleteDeleteLazyRoute: ProtectedAdminDeleteDeleteLazyRoute,
   ProtectedAdminEditEditLazyRoute: ProtectedAdminEditEditLazyRoute,
