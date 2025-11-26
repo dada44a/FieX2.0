@@ -19,7 +19,8 @@ export const app = new Hono();
 
 app.use("*", prettyJSON());
 app.use("*", cors());
-app.use("/", clerkMiddleware())
+app.use("*", clerkMiddleware());
+
 
 app.use("/api/inngest", InngestServe({ client: inngest, functions}));
 // routes
@@ -83,4 +84,10 @@ app.post("/initiate", async (c) => {
   }
 });
 
+// serve({
+//   fetch: app.fetch,
+//   port: 4000
+// }, (info) => {
+//   console.log(`Server is running on http://localhost:${info.port}`)
+// })
 export default app;

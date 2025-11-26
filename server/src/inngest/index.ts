@@ -197,8 +197,7 @@ const syncUser = inngest.createFunction(
     ).email_address
     await db.insert(users).values({
       clerkId: id,
-      firstName: first_name,
-      lastName: last_name,
+      name: `${first_name} ${last_name}`,
       email: email,
       points: 0,
       role: 'USER',
