@@ -1,7 +1,7 @@
 import { Inngest } from "inngest";
 import { connectDb } from "../db/init.js";
 import { and, eq, ne } from "drizzle-orm";
-import { seats, shows, showSeats, tickets } from "../db/schema.js";
+import { seats, shows, showSeats, tickets, users } from "../db/schema.js";
 
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "my-app" });
@@ -185,6 +185,37 @@ const clearSelectedSeats = inngest.createFunction(
   },
 );
 
+const syncUser = inngest.createFunction(
+  { id: 'sync-user-from-clerk' }, // ←The 'id' is an arbitrary string used to identify the function in the dashboard
+  { event: 'clerk/user.created' }, // ← This is the function's triggering event
+  async ({ event }) => {
+    const db = connectDb();
+    const user = event.data // The event payload's data will be the Clerk User json object
+    const { id, first_name, last_name } = user
+    const email = user.email_addresses.find(
+      (e:any) => e.id === user.primary_email_address_id,
+    ).email_address
+    await db.insert(users).values({
+      clerkId: id,
+      firstName: first_name,
+      lastName: last_name,
+      email: email,
+      points: 0,
+      role: 'USER',
+    }).returning();
+  },
+)
+
+const syncDeleteUser = inngest.createFunction(
+  { id: 'delete-user-from-clerk' },
+  { event: 'clerk/user.deleted' },
+  async ({ event }) => {  
+    const db = connectDb();
+    const user = event.data
+    const { id } = user
+    await db.delete(users).where(eq(users.clerkId, id)).returning();
+  }
+);
 // Create an empty array where we'll export future Inngest functions
 export const functions = [
   helloWorld,
@@ -192,4 +223,6 @@ export const functions = [
   inActiveSeats,
   clearSelectedSeats,
   bookSeats,
+  syncUser,
+  syncDeleteUser
 ];
