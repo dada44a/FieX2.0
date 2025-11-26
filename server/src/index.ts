@@ -81,4 +81,4 @@ app.post("/initiate", async (c) => {
   }
 });
 
-export default app.fetch;
+export default app;
