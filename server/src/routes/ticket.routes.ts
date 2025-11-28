@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { connectDb } from "../db/init.js";
 import { movies, screens, shows, showSeats, tickets, users } from "../db/schema.js";
 import { and, eq, inArray } from "drizzle-orm/sql/expressions/conditions";
+import QRCode from 'qrcode'
 import type { NewTicket, Ticket } from "../types.js";
 
 const ticketRoutes = new Hono();
@@ -87,6 +88,62 @@ ticketRoutes.get("/:id", async (c) => {
     });
 
     return c.json({ message: "Tickets with seats", data: ticketsWithSeats });
+  } catch (error: any) {
+    return c.json({ message: "Internal Server Error", error: error.message }, 500);
+  }
+});
+
+
+ticketRoutes.get("/:id/qr", async (c) => {
+  try {
+    const { id } = c.req.param();
+    const db = connectDb();
+
+    const ticketsForUser = await db
+      .select({
+        id: tickets.id,
+        movie: movies.title,
+        genre: movies.genre,
+        screen: screens.name,
+        showTime: shows.showTime,
+        showDate: shows.showDate,
+      })
+      .from(tickets)
+      .innerJoin(shows, eq(tickets.showId, shows.id))
+      .innerJoin(movies, eq(movies.id, shows.movieId))
+      .innerJoin(screens, eq(screens.id, shows.screenId))
+      .where(eq(tickets.id, Number(id)));
+
+    if (ticketsForUser.length === 0) {
+      return c.json({ message: "No tickets found", data: null });
+    }
+
+    const ticket = ticketsForUser[0];
+
+    const seats = await db
+      .select({
+        row: showSeats.row,
+        column: showSeats.column,
+        ticketId: showSeats.ticketId
+      })
+      .from(showSeats)
+      .where(eq(showSeats.ticketId, ticket.id));
+
+    const qrData = {
+      ...ticket,
+      seats: seats.map((s: any) => `${s.row}${s.column}`)
+    };
+
+    const qrCode = await QRCode.toDataURL(JSON.stringify(qrData));
+
+    return c.json({
+      message: "Ticket with seats",
+      data: { 
+        data: qrData,
+        qrCode
+       }
+    });
+
   } catch (error: any) {
     return c.json({ message: "Internal Server Error", error: error.message }, 500);
   }

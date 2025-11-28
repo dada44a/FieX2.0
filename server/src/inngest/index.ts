@@ -1,10 +1,46 @@
-import { Inngest } from "inngest";
+import { Inngest, step } from "inngest";
 import { connectDb } from "../db/init.js";
 import { and, eq, ne } from "drizzle-orm";
 import { seats, shows, showSeats, tickets, users } from "../db/schema.js";
+import Brevo from '@getbrevo/brevo';
 
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "my-app" });
+
+import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+import axios from "axios";
+
+dotenv.config();
+
+export const sendEmail = async ({ to, subject, html }: any) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.BREVO_SMTP,
+      port: Number(process.env.BREVO_PORT),
+      secure: false,
+      auth: {
+        user: process.env.BREVO_USER,
+        pass: process.env.BREVO_PASS,
+      },
+    });
+
+    const info = await transporter.sendMail({
+      from: `"Your App" <${process.env.BREVO_USER}>`,
+      to,
+      subject,
+      html,
+    });
+
+    console.log("Email sent:", info.messageId);
+    return info;
+  } catch (err) {
+    console.error("Email error:", err);
+    throw err;
+  }
+};
+
+
 
 const helloWorld = inngest.createFunction(
   { id: "hello-world" },
@@ -78,9 +114,35 @@ const inActiveSeats = inngest.createFunction(
           booked_by: userId,
         })
         .where(and(eq(showSeats.id, id), ne(showSeats.status, "BOOKED")))
+        .returning()
         .execute();
 
-      return { success: true, updated: result.rowCount };
+      const updatedSeat = result[0];
+      await step.sleep("release-seat-after-5-minutes", "2mins");
+
+      const seatCheck = await db
+        .select()
+        .from(showSeats)
+        .where(eq(showSeats.id, updatedSeat.id))
+        .then((res: any) => res[0]);
+
+      if (!seatCheck) {
+        return { success: false, message: "Seat not found after 5 minutes." };
+      }
+
+      // If still SELECTED → return to AVAILABLE
+      if (seatCheck.status === "SELECTED") {
+        await db
+          .update(showSeats)
+          .set({
+            status: "AVAILABLE",
+            booked_by: null,
+          })
+          .where(eq(showSeats.id, updatedSeat.id))
+          .execute();
+      }
+
+      return { success: true, updated: result.rowCount, seats: result };
     } catch (err: any) {
       console.error("Failed to mark seats as inactive:", err);
       return { success: false, error: err.message };
@@ -146,6 +208,18 @@ const bookSeats = inngest.createFunction(
         )
         .execute();
 
+      await inngest.send({
+        name: "ticket/send-email",
+        data: {
+          ticket_id,
+          userId,
+        },
+      });
+
+
+
+
+
       return { success: true, updated: result.rowCount };
     } catch (err: any) {
       console.error("Failed to mark seats as inactive:", err);
@@ -153,6 +227,91 @@ const bookSeats = inngest.createFunction(
     }
   },
 );
+
+const sendTicketEmail = inngest.createFunction(
+  { id: "send-ticket-email" },
+  { event: "ticket/send-email" },
+  async ({ event, step }) => {
+    try {
+      const { ticket_id, userId } = event.data;
+
+      const db = connectDb();
+      const user = await db
+        .select({ email: users.email })
+        .from(users)
+        .where(eq(users.clerkId, userId))
+        .then((res: any) => res[0]);
+
+      await step.sleep("wait-before-fetch", "30s"); // wait 2 seconds
+
+
+      const fetched = await fetch(`http://localhost:4000/api/tickets/${ticket_id}/qr`);
+      const { data } = await fetched.json();
+      const { data: qrData, qrCode } = data;
+      const subject = "Your Movie Ticket";
+      const html = `
+        <h1>Your Movie Ticket</h1>
+        <p>Here are your ticket details:</p>
+        <ul>
+          <li>Movie: ${qrData.movie}</li>
+          <li>Genre: ${qrData.genre}</li>
+          <li>Screen: ${qrData.screen}</li>
+          <li>Show Time: ${qrData.showTime}</li>
+          <li>Show Date: ${qrData.showDate}</li>
+          <li>Seats: ${qrData.seats.join(', ')}</li>
+        </ul>
+        <p>Please find your QR code attached.</p>
+        <img src="cid:ticketImage" style="width:200px;" />
+      `;
+
+      const transporter = nodemailer.createTransport({
+      host: "smtp-relay.brevo.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: "9cb581001@smtp-brevo.com",
+        pass:  process.env.BREVO_SMTP_KEY as string // API KEY from Brevo
+      }
+    });
+
+    async function sendEmail() {
+      const info = await transporter.sendMail({
+        from: '<dada44w@gmail.com>',
+        to: user.email as string,
+        subject: "Your Movie Ticket",
+        html: html,
+        attachments: [
+          {
+            filename: 'ticket-qr.png',
+            content: Buffer.from(qrCode.split(",")[1], 'base64'),
+            cid: 'ticketImage' // same cid value as in the html img src
+          }
+        ] 
+      });
+
+      console.log("Message sent:", info.messageId);
+    }
+
+    sendEmail();
+
+      return { success: true };
+    } catch (err: any) {
+      console.error("Failed to send ticket email:", err);
+      return { success: false, error: err.message };
+    }
+  },
+);
+
+const testEmailFunction = inngest.createFunction(
+  { id: "test-email-function" },
+  { event: "test/send-email" },
+  async ({ event }) => {
+    
+
+  }
+);
+
+
 
 const clearSelectedSeats = inngest.createFunction(
   { id: "clear-seats" },
@@ -193,7 +352,7 @@ const syncUser = inngest.createFunction(
     const user = event.data // The event payload's data will be the Clerk User json object
     const { id, first_name, last_name } = user
     const email = user.email_addresses.find(
-      (e:any) => e.id === user.primary_email_address_id,
+      (e: any) => e.id === user.primary_email_address_id,
     ).email_address
     await db.insert(users).values({
       clerkId: id,
@@ -208,7 +367,7 @@ const syncUser = inngest.createFunction(
 const syncDeleteUser = inngest.createFunction(
   { id: 'delete-user-from-clerk' },
   { event: 'clerk/user.deleted' },
-  async ({ event }) => {  
+  async ({ event }) => {
     const db = connectDb();
     const user = event.data
     const { id } = user
@@ -222,6 +381,9 @@ export const functions = [
   inActiveSeats,
   clearSelectedSeats,
   bookSeats,
+  sendTicketEmail,   // ← FIXED
   syncUser,
-  syncDeleteUser
+  syncDeleteUser,
+  testEmailFunction,
+
 ];

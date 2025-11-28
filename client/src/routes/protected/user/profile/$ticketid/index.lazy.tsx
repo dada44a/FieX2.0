@@ -9,103 +9,66 @@ export const Route = createLazyFileRoute('/protected/user/profile/$ticketid/')({
   component: RouteComponent,
 });
 
-interface TicketData {
-  id: number;
-  customerId: string;
-  showId: number;
-  movieTitle?: string;
-  showDate?: string;
-  showTime?: string;
-  seats?: string[];
-  paymentMethod?: string;
-  transactionId?: string;
-  mobile?: string;
-}
-
 function RouteComponent() {
-  const params = Route.useParams();
-  const { user, isLoaded } = useUser();
-  const customerId = user?.id;
-  const ticketRef = useRef<HTMLDivElement | null>(null);
+  const { ticketid } = Route.useParams();
 
-  const { data: ticket, isLoading, error } = useQuery<TicketData | null>({
-    queryKey: ['ticket', customerId, params.ticketid],
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['ticketDetails', ticketid],
     queryFn: async () => {
-      if (!customerId) return null;
-
-      const res = await fetch(
-        `${import.meta.env.VITE_API_LINK}/api/tickets/user/${customerId}/details`
-      );
-      if (!res.ok) throw new Error('Failed to fetch ticket');
-
+      const res = await fetch(`${import.meta.env.VITE_API_LINK}/api/tickets/${ticketid}/qr`);
+      if (!res.ok) throw new Error('Failed to fetch ticket details');
       const json = await res.json();
-      if (!Array.isArray(json.data)) return null;
-
-      return json.data.find((t: any) => t.id.toString() === params.ticketid) || null;
+      return json.data;
     },
-    enabled: !!customerId && isLoaded,
   });
 
-  // const downloadTicket = async () => {
-  //   if (!ticketRef.current || !ticket) return;
-
-  //   try {
-  //     const canvas = await html2canvas(ticketRef.current, {
-  //       backgroundColor: '#1f2937',
-  //       scale: 3,
-  //       useCORS: true,
-  //     });
-
-  //     // toBlob is async – wrap it in a promise so we can await it
-  //     const blob = await new Promise<Blob | null>((resolve) =>
-  //       canvas.toBlob((b) => resolve(b), 'image/png')
-  //     );
-
-  //     if (blob) saveAs(blob, `ticket_${ticket.id}.png`);
-  //   } catch (err) {
-  //     console.error('Ticket download error:', err);
-  //   }
-  // };
-
-  if (isLoading) return <p className="text-center mt-10 text-white">Loading ticket...</p>;
-  if (error) return <p className="text-center mt-10 text-red-500">Failed to load ticket.</p>;
-  if (!ticket) return <p className="text-center mt-10 text-white">Ticket not found</p>;
+  if (isLoading) return <div className="flex justify-center py-10">Loading...</div>;
+  if (error) return <div className="text-red-500">Error: {(error as Error).message}</div>;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div
-        ref={ticketRef}
-        className="bg-gray-800 shadow-lg rounded-2xl p-6 w-full max-w-md relative"
-      >
-        <h2 className="text-2xl font-bold mb-2 text-center text-white">
-          {ticket.movieTitle || 'Movie Ticket'}
-        </h2>
-        <p className="text-center text-white mb-4">
-          Show: {ticket.showDate || 'N/A'} | {ticket.showTime || 'N/A'}
-        </p>
+    <div className="flex justify-center items-center py-10 h-screen">
+      <div className="card bg-base-200 w-[800px] h-3/5 shadow-xl border border-base-300">
+        <div className="card-body space-y-6">
 
-        <div className="flex justify-between mb-4">
-          <div className="text-white">
-            <p><strong>Seats:</strong> {ticket.seats?.join(', ') || 'N/A'}</p>
-            <p><strong>Payment:</strong> {ticket.paymentMethod || 'N/A'}</p>
-            <p><strong>Transaction ID:</strong> {ticket.transactionId || 'N/A'}</p>
-            <p><strong>Mobile:</strong> {ticket.mobile || 'N/A'}</p>
-          </div>
-          <div>
-            <div className="bg-white p-2 rounded-lg inline-block">
-              {/* <QRCodeSVG value={JSON.stringify(ticket)} size={120} /> */}
+          {/* Title */}
+          <h2 className="card-title text-2xl font-bold text-primary ">
+            🎟️ Your Ticket
+          </h2>
+
+          {/* QR + Info */}
+          <div className="flex gap-5 items-center">
+
+            {/* QR */}
+            <div className="p-2 rounded-xl bg-white shadow-sm border">
+              <img
+                src={data?.qrCode}
+                alt="QR Code"
+                className="w-70 h-70 object-contain"
+              />
             </div>
+
+            {/* Ticket Info */}
+            <div className="space-y-1 text-lg">
+              <p><span className="font-semibold">Movie:</span> {data?.data.movie}</p>
+              <p><span className="font-semibold">Genre:</span> {data?.data.genre}</p>
+              <p><span className="font-semibold">Screen:</span> {data?.data.screen}</p>
+              <p><span className="font-semibold">Show Time:</span> {data?.data.showTime}</p>
+              <p><span className="font-semibold">Show Date:</span> {data?.data.showDate}</p>
+              <p><span className="font-semibold">Seats:</span> {data?.data.seats.join(', ')}</p>
+            </div>
+
           </div>
 
-        </div>
+          {/* Divider */}
+          <div className="divider my-0"></div>
 
-        <button
-   
-          className="btn btn-primary w-full mt-4"
-        >
-          Download Ticket
-        </button>
+          {/* Footer / Action */}
+          <button className="btn btn-primary w-full">
+            Download Ticket
+          </button>
+        </div>
       </div>
     </div>
   );
 }
+

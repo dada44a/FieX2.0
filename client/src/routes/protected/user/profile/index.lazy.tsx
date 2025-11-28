@@ -1,12 +1,12 @@
 import { LoadingTable } from '@/components/loadingtable';
-import { createLazyFileRoute } from '@tanstack/react-router';
+import { createLazyFileRoute, Link } from '@tanstack/react-router';
 import { createColumnHelper } from '@tanstack/react-table';
 import { useQuery } from '@tanstack/react-query';
 import React, { Suspense } from 'react';
 import Table from '@/components/Table';
 import UserProfileComponent from '@/components/less_use/user_profile';
 import { useUser } from '@clerk/clerk-react';
-import { useRequireAuth } from '@/middleware/auth';
+
 
 export const Route = createLazyFileRoute('/protected/user/profile/')({
   component: RouteComponent,
@@ -45,12 +45,14 @@ function RouteComponent() {
       columnHelper.accessor('seats', { header: 'Seats', cell: info => info.getValue().join(', ') }),
       columnHelper.display({
         id: 'action', header: 'Action', cell: info => (
-          <a
-            href={`/protected/user/profile/${info.row.original.id}`}
+          <Link
+            to="/protected/user/profile/$ticketid"
+            params={{ ticketid:info.row.original.id.toString() }}
             className="btn btn-sm btn-primary"
           >
             details
-          </a>
+          </Link>
+
         )
       }),
     ],
