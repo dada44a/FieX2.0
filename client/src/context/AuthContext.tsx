@@ -6,6 +6,7 @@ interface AuthContextType {
   role: string | null;
   loading: boolean;
   error: string | null;
+  isStaff: boolean;
   isAdmin: boolean;
 }
 
@@ -13,6 +14,7 @@ const AuthContext = createContext<AuthContextType>({
   role: null,
   loading: true,
   error: null,
+  isStaff: false,
   isAdmin: false,
 });
 
@@ -54,7 +56,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         role,
         loading,
         error,
+        isStaff: role === "STAFF",
         isAdmin: role === "ADMIN",
+
       }}
     >
       {children}

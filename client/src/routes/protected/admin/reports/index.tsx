@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { createColumnHelper } from '@tanstack/react-table';
 import React from 'react';
+import Card from '@/components/Card'; // Import Card component
 // Import and register Chart.js components
 import {
   Chart as ChartJS,
@@ -32,7 +33,7 @@ ChartJS.register(
 );
 // ---------------------------------------------------
 
-export const Route = createFileRoute('/protected/reports/')({
+export const Route = createFileRoute('/protected/admin/reports/')({
   component: RouteComponent,
 });
 
@@ -66,7 +67,7 @@ function RouteComponent() {
     // The key prop on the charts is sufficient for a re-render when reportData changes,
     // but the primary issue is Chart.js registration. We'll keep 'enabled: false'
     // to match the original logic of only fetching on 'Generate' click.
-    enabled: false, 
+    enabled: false,
   });
 
   const columns = React.useMemo(
@@ -87,10 +88,10 @@ function RouteComponent() {
   const handleGenerateReport = () => {
     // Only refetch if both dates are selected
     if (startDate && endDate) {
-        refetch();
+      refetch();
     } else {
-        // Optional: Add some user feedback if dates are missing
-        console.warn('Please select both start and end dates.');
+      // Optional: Add some user feedback if dates are missing
+      console.warn('Please select both start and end dates.');
     }
   };
 
@@ -109,7 +110,7 @@ function RouteComponent() {
       ],
     };
   }, [reportData]);
-  
+
   // Helper to extract bar chart data safely
   const barChartData = React.useMemo(() => {
     const data = reportData?.barGraph || [];
@@ -130,12 +131,12 @@ function RouteComponent() {
     const data = reportData?.pieChart || [];
     // You might want to use a color palette for Pie charts
     const backgroundColors = [
-        'rgba(255, 99, 132, 0.7)',
-        'rgba(54, 162, 235, 0.7)',
-        'rgba(255, 206, 86, 0.7)',
-        'rgba(75, 192, 192, 0.7)',
-        'rgba(153, 102, 255, 0.7)',
-        'rgba(255, 159, 64, 0.7)',
+      'rgba(255, 99, 132, 0.7)',
+      'rgba(54, 162, 235, 0.7)',
+      'rgba(255, 206, 86, 0.7)',
+      'rgba(75, 192, 192, 0.7)',
+      'rgba(153, 102, 255, 0.7)',
+      'rgba(255, 159, 64, 0.7)',
     ];
 
     return {
@@ -152,26 +153,32 @@ function RouteComponent() {
   }, [reportData]);
 
   return (
-    <div className="flex flex-col items-center justify-start min-h-screen p-5 gap-6">
-      <div className="card bg-base-300 w-full max-w-4xl shadow-sm">
-        <div className="card-body">
-          <form className="flex items-center gap-4 mb-4">
-            <div className="flex items-center gap-2">
-              <label htmlFor="start">Start</label>
+    <main className="min-h-screen py-8 px-8">
+      <div className="cineverse-container">
+        <h1 className="text-2xl font-bold mb-6">Reports Dashboard</h1>
+
+        <Card title="Generate Report">
+          <form className="flex flex-wrap items-end gap-4">
+            <div className="form-control w-full max-w-xs">
+              <label className="label" htmlFor="start">
+                <span className="label-text">Start Date</span>
+              </label>
               <input
                 type="date"
                 name="start"
-                className="input input-bordered"
+                className="input input-bordered w-full max-w-xs"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
             </div>
-            <div className="flex items-center gap-2">
-              <label htmlFor="end">End</label>
+            <div className="form-control w-full max-w-xs">
+              <label className="label" htmlFor="end">
+                <span className="label-text">End Date</span>
+              </label>
               <input
                 type="date"
                 name="end"
-                className="input input-bordered"
+                className="input input-bordered w-full max-w-xs"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
@@ -180,62 +187,61 @@ function RouteComponent() {
               type="button"
               className="btn btn-primary"
               onClick={handleGenerateReport}
-              disabled={isLoading || !startDate || !endDate} // Disable if loading or dates are missing
+              disabled={isLoading || !startDate || !endDate}
             >
               {isLoading ? 'Loading...' : 'Generate'}
             </button>
           </form>
+          {isError && <p className="text-error mt-2">Failed to load reports</p>}
+        </Card>
 
-          <h2 className="card-title mb-2">Reports</h2>
-          {isError && <p className="text-error">Failed to load reports</p>}
-        </div>
+        {/* Only display charts and table if data is available and not loading */}
+        {reportData && !isLoading && (
+          <div className="mt-6 flex flex-col gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card title="Revenue by Date (Line Chart)">
+                <div className="h-64 sm:h-80 w-full flex items-center justify-center">
+                  <Line
+                    data={lineChartData}
+                    options={{ maintainAspectRatio: false }}
+                  />
+                </div>
+              </Card>
+              <div className="grid grid-cols-1 gap-6">
+                <Card title="Bookings by Movie (Bar Chart)">
+                  <div className="h-64 w-full flex items-center justify-center">
+                    <Bar
+                      data={barChartData}
+                      options={{ maintainAspectRatio: false }}
+                    />
+                  </div>
+                </Card>
+                <Card title="Revenue by Screen (Pie Chart)">
+                  <div className="h-64 w-full flex items-center justify-center">
+                    <Pie
+                      data={pieChartData}
+                      options={{ maintainAspectRatio: false }}
+                    />
+                  </div>
+                </Card>
+              </div>
+            </div>
+
+            <Card title="Ticket Details">
+              <Table data={reportData?.table || []} columns={columns} />
+            </Card>
+          </div>
+        )}
+
+        {/* Fallback for initial state or loading state when data is requested */}
+        {isLoading && <div className="mt-10 flex justify-center"><span className="loading loading-spinner loading-lg"></span></div>}
+        {!reportData && !isLoading && !isError && (
+          <div className="mt-10 text-center opacity-50">
+            <p>Select a date range and click "Generate" to view reports.</p>
+          </div>
+        )}
       </div>
-
-      {/* Only display charts and table if data is available and not loading */}
-      {reportData && !isLoading && (
-      <div>
-        <div className="card bg-base-200 card-md shadow-sm">
-          <div className="card-body">
-            <h2 className="card-title">Revenue by Date (Line Chart)</h2>
-            <Line
-              // Key is not strictly necessary here, as useQuery's data change
-              // is sufficient to trigger a re-render and chart update once
-              // the components are registered. Using React.useMemo for data 
-              // also helps performance.
-              data={lineChartData}
-            />
-          </div>
-        </div>
-
-        <div className='flex mt-5 items-center gap-2'>
-          <div className="card bg-base-200 card-md shadow-sm">
-            <div className="card-body">
-              <h2 className="card-title">Bookings by Movie (Bar Chart)</h2>
-              <Bar data={barChartData} />
-            </div>
-          </div>
-          <div className="card bg-base-200 card-md shadow-sm">
-            <div className="card-body">
-              <h2 className="card-title">Revenue by Screen (Pie Chart)</h2>
-              <Pie data={pieChartData} />
-            </div>
-          </div>
-        </div>
-
-        <div className="card w-full max-w-4xl mt-5 bg-base-100 card-md shadow-sm">
-            <div className="card-body">
-            <h2 className="card-title">Ticket Details (Table)</h2>
-            <Table data={reportData?.table || []} columns={columns} />
-            </div>
-        </div>
-      </div>
-      )}
-      {/* Fallback for initial state or loading state when data is requested */}
-      {isLoading && <p className='text-center'>Loading chart and table data...</p>}
-      {!reportData && !isLoading && !isError && (
-          <p className='text-center'>Select a date range and click "Generate" to view reports.</p>
-      )}
-    </div>
+    </main>
   );
 }
 
