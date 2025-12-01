@@ -62,6 +62,7 @@ export const shows = pgTable("shows", {
   screenId: integer("screen_id")
     .notNull()
     .references(() => screens.id, { onDelete: "cascade" }),
+  reservedSeats: integer("reserved_seats").default(0).notNull(),
 });
 
 // ------------------ TICKET ------------------
@@ -77,6 +78,7 @@ export const tickets = pgTable("tickets", {
     onDelete: "cascade",
   }),
   bookedTime: text("booked_time"),
+  isUsed: boolean("is_used").default(false).notNull(),
 });
 
 export const showSeats = pgTable("show_seats", {

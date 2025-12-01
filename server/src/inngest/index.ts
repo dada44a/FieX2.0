@@ -1,6 +1,6 @@
 import { Inngest, step } from "inngest";
 import { connectDb } from "../db/init.js";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, lte, ne } from "drizzle-orm";
 import { seats, shows, showSeats, tickets, users } from "../db/schema.js";
 import Brevo from '@getbrevo/brevo';
 
@@ -228,6 +228,58 @@ const bookSeats = inngest.createFunction(
   },
 );
 
+
+const reserve_seats = inngest.createFunction(
+  { id: "reserve-seats" },
+  { event: "booking/reserve-seats" },
+  async ({ event }) => {
+    try {
+      const db = connectDb();
+      const now = new Date();
+      const time = now.toLocaleTimeString();
+      const { id, userId } = event.data;
+      const result = await db
+        .update(showSeats)
+        .set({
+          status: "RESERVED",
+          booked_by: userId,
+          bookedTime: time as string,
+
+        })
+        .where(
+          and(
+            eq(showSeats.showId, id),
+            eq(showSeats.booked_by, userId),
+            eq(showSeats.status, "SELECTED"),
+          ),
+        )
+        .returning()
+        .execute();
+
+      const updatedCount = result.length;
+
+      const reservedSeatsCount = await db
+        .select({
+          reservedSeats: shows.reservedSeats
+        })
+        .from(shows)
+        .where(eq(shows.id, Number(id)))
+        .then((res: any) => res[0].reservedSeats);  
+
+      await db.update(shows).set({
+        reservedSeats: reservedSeatsCount + updatedCount,
+      })
+        .where(and(eq(shows.id, Number(id)), lte(shows.reservedSeats, 5)))
+        .execute();
+
+      return { success: true, updated: result.rowCount };
+    } catch (err: any) {
+      console.error("Failed to mark seats as inactive:", err);
+      return { success: false, error: err.message };
+    }
+  },
+);
+
 const sendTicketEmail = inngest.createFunction(
   { id: "send-ticket-email" },
   { event: "ticket/send-email" },
@@ -265,34 +317,34 @@ const sendTicketEmail = inngest.createFunction(
       `;
 
       const transporter = nodemailer.createTransport({
-      host: "smtp-relay.brevo.com",
-      port: 587,
-      secure: false,
-      auth: {
-        user: "9cb581001@smtp-brevo.com",
-        pass:  process.env.BREVO_SMTP_KEY as string // API KEY from Brevo
-      }
-    });
-
-    async function sendEmail() {
-      const info = await transporter.sendMail({
-        from: '<dada44w@gmail.com>',
-        to: user.email as string,
-        subject: "Your Movie Ticket",
-        html: html,
-        attachments: [
-          {
-            filename: 'ticket-qr.png',
-            content: Buffer.from(qrCode.split(",")[1], 'base64'),
-            cid: 'ticketImage' // same cid value as in the html img src
-          }
-        ] 
+        host: "smtp-relay.brevo.com",
+        port: 587,
+        secure: false,
+        auth: {
+          user: "9cb581001@smtp-brevo.com",
+          pass: process.env.BREVO_SMTP_KEY as string // API KEY from Brevo
+        }
       });
 
-      console.log("Message sent:", info.messageId);
-    }
+      async function sendEmail() {
+        const info = await transporter.sendMail({
+          from: 'FireX Cinema <dada44w@gmail.com>',
+          to: user.email as string,
+          subject: "Your Movie Ticket",
+          html: html,
+          attachments: [
+            {
+              filename: 'ticket-qr.png',
+              content: Buffer.from(qrCode.split(",")[1], 'base64'),
+              cid: 'ticketImage' // same cid value as in the html img src
+            }
+          ]
+        });
 
-    sendEmail();
+        console.log("Message sent:", info.messageId);
+      }
+
+      sendEmail();
 
       return { success: true };
     } catch (err: any) {
@@ -306,7 +358,7 @@ const testEmailFunction = inngest.createFunction(
   { id: "test-email-function" },
   { event: "test/send-email" },
   async ({ event }) => {
-    
+
 
   }
 );

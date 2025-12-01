@@ -78,8 +78,8 @@ ticketRoutes.get("/:id", async (c) => {
     const ticketsWithSeats = ticketsForUser.map((ticket) => {
       // Get seats for this ticket
       const seatsForThisTicket = seats
-        .filter((s:any) => s.ticketId === ticket.id)
-        .map((s:any) => `${s.row}${s.column}`); // e.g. "A1", "B2"
+        .filter((s: any) => s.ticketId === ticket.id)
+        .map((s: any) => `${s.row}${s.column}`); // e.g. "A1", "B2"
 
       return {
         ...ticket,
@@ -138,12 +138,35 @@ ticketRoutes.get("/:id/qr", async (c) => {
 
     return c.json({
       message: "Ticket with seats",
-      data: { 
+      data: {
         data: qrData,
         qrCode
-       }
+      }
     });
 
+  } catch (error: any) {
+    return c.json({ message: "Internal Server Error", error: error.message }, 500);
+  }
+});
+
+ticketRoutes.put("/used/:id", async (c) => {
+  try {
+    const { id } = c.req.param();
+    const db = connectDb();
+
+    const ticketIsUsed = await db.select().from(tickets).where(eq(tickets.id, Number(id)));
+
+    if (ticketIsUsed.length === 0) {
+      return c.json({ message: "Ticket not found", data: null }, 404);
+    }
+
+    if (ticketIsUsed[0].isUsed) {
+      return c.json({ message: "Ticket already used", data: null }, 400);
+    }
+
+    const ticket = await db.update(tickets).set({ isUsed: true }).where(and(eq(tickets.id, Number(id)), eq(tickets.isUsed, false)));
+
+    return c.json({ message: "Ticket updated", data: ticket });
   } catch (error: any) {
     return c.json({ message: "Internal Server Error", error: error.message }, 500);
   }
