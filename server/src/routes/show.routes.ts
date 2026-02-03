@@ -3,29 +3,31 @@ import { connectDb } from "../db/init.js";
 import { movies, screens, shows, users } from "../db/schema.js";
 import { and, eq, gte, lte } from "drizzle-orm/sql/expressions/conditions";
 import type { Show } from "../types.js";
-import { inngest } from "../inngest/index.js";
 
 
 const showRoutes = new Hono();
 
+//  -------------------Helper Function --------------------
+
+// get all shows
 showRoutes.get('/', async (c) => {
-  try {
-    const db = connectDb();
-    const show: Show[] = await db.select().from(shows);
+    try {
+        const db = connectDb();
+        const show: Show[] = await db.select().from(shows);
 
-    const responseData = await Promise.all(
-      show.map(async (s) => {
-        const movie = await db
-          .select({ title: movies.title })
-          .from(movies)
-          .where(eq(movies.id, s.movieId))
-          .limit(1).execute(); // fetch single movie
+        const responseData = await Promise.all(
+            show.map(async (s) => {
+                const movie = await db
+                    .select({ title: movies.title })
+                    .from(movies)
+                    .where(eq(movies.id, s.movieId))
+                    .limit(1).execute(); // fetch single movie
 
-        const screen = await db
-          .select({ name: screens.name })
-          .from(screens)
-          .where(eq(screens.id, s.screenId))
-          .limit(1).execute(); // fetch single screen
+                const screen = await db
+                    .select({ name: screens.name })
+                    .from(screens)
+                    .where(eq(screens.id, s.screenId))
+                    .limit(1).execute(); // fetch single screen
 
         return {
           ...s,
@@ -34,11 +36,30 @@ showRoutes.get('/', async (c) => {
         };
       })
     );
+
+    console.log("Fetched shows:", responseData);
     return c.json({ message: 'List of shows', data: responseData });
   } catch (error: any) {
     return c.json({ message: 'Internal Server Error', error: error.message }, 500);
   }
 });
+
+
+
+
+const checkerDateTime = async (db: any, screenId: number, showDate: string, showTime: string) => {
+    const existingShow = await db.select().from(shows).where(
+        and(
+            eq(shows.screenId, screenId),
+            eq(shows.showDate, showDate),
+            eq(shows.showTime, showTime)
+        )
+    )
+    if (existingShow.length > 0) {
+        return existingShow[0];
+    }
+    return null;
+}
 
 //? Create a new show
 showRoutes.post("/", async (c) => {
@@ -46,7 +67,7 @@ showRoutes.post("/", async (c) => {
 
   try {
     const body = await c.req.json().catch((e) => {
-      console.log("Could not parse body:", e);
+      console.log("❌ Could not parse body:", e);
       return null;
     });
 
@@ -59,31 +80,23 @@ showRoutes.post("/", async (c) => {
     const { movieId, screenId, showDate, showTime } = body;
 
     if (!movieId || !screenId || !showDate || !showTime) {
+      console.log("❌ Missing fields:", body);
       return c.json({ error: "All fields are required" }, 400);
     }
 
-    const db = connectDb();
-    const existingShow = await db
-      .select()
-      .from(shows)
-      .where(
-        and(
-          eq(shows.screenId, screenId),
-          eq(shows.showDate, showDate),
-          eq(shows.showTime, showTime)
-        )
-      )
-      .execute();
+        const db = connectDb();
 
-    console.log("Result existingShow:", existingShow);
+        // ✅ Check for duplicates
+        const alreadyExists = await checkerDateTime(db,screenId, showDate, showTime);
+        console.log("Checking for existing show:", alreadyExists);
+        if (alreadyExists!== null) {
+            return c.json(
+                { message: "Show with the same screen, date, and time already exists" },
+                400
+            );
+        }
 
-    if (existingShow.length > 0) {
-      console.log(" Duplicate show detected.");
-      return c.json(
-        { message: "Show with same screen, date & time already exists" },
-        400
-      );
-    }
+    console.log("🟢 No duplicate. Inserting...");
 
     const inserted = await db
       .insert(shows)
@@ -97,17 +110,8 @@ showRoutes.post("/", async (c) => {
 
     console.log("✅ Inserted row:", inserted);
 
-    try {
-      await inngest.send({
-        name: "show/show-seats",
-        data: { showId: inserted[0].id, screenId },
-      });
-    } catch (e) {
-      console.error("Failed to send Inngest event:", e);
-    }
-
     return c.json(
-      { message: "Show created successfully" },
+      { message: "Show created successfully", show: inserted[0] },
       201
     );
   } catch (err: any) {
@@ -119,112 +123,128 @@ showRoutes.post("/", async (c) => {
   }
 });
 
-showRoutes.get("/:id/next-three", async (c) => {
+
+
+showRoutes.get("/next-three/:id", async (c) => {
   try {
     const db = connectDb();
-    const movieId = Number(c.req.param("id")); // get movie id from params
+    const movieId = Number(c.req.param("id"));
+    if (isNaN(movieId)) return c.json({ message: "Invalid movie ID" }, 400);
 
     const today = new Date();
     const endDate = new Date();
-    endDate.setDate(today.getDate() + 2); // next 3 days
+    endDate.setDate(today.getDate() + 2);
 
-    const formatDate = (d: Date) => d.toISOString().split("T")[0];
-    const todayStr = formatDate(today);
-    const endDateStr = formatDate(endDate);
+    const todayStr = today.toISOString().split("T")[0];
+    const endDateStr = endDate.toISOString().split("T")[0];
 
-    // Join movies with shows and filter by movieId & date range
+    // Fetch shows with movie info
     const rows = await db
       .select({
-        movieId: movies.id,
-        title: movies.title,
-        imageLink: movies.imageLink,
-        genre: movies.genre,
-        description: movies.description,
         showId: shows.id,
         showDate: shows.showDate,
-        screenId: shows.screenId
+        showTime: shows.showTime,
+        screenId: shows.screenId,
+        title: movies.title,
+        genre: movies.genre,
+        imageUrl: movies.imageLink,
+        description: movies.description,
+        release: movies.releaseDate,
       })
-      .from(movies)
-      .leftJoin(shows, eq(shows.movieId, movies.id))
+      .from(shows)
+      .innerJoin(movies, eq(movies.id, shows.movieId))
       .where(
         and(
-          eq(movies.id, movieId),
+          eq(shows.movieId, movieId),
           gte(shows.showDate, todayStr),
           lte(shows.showDate, endDateStr)
         )
-      );
+      )
+      .groupBy(
+        shows.id,
+        movies.id
+      )
+      .execute();
 
-    if (!rows.length) return c.json({ message: "No shows found or movie not found" }, 404);
+    if (!rows.length) {
+      return c.json({ message: "No shows found", movie: null, shows: {} });
+    }
 
-    // Extract movie details (same for all rows)
-    const { movieId: id, title, description, imageLink, genre } = rows[0];
-
-    // Group shows by date
-    const grouped: Record<string, typeof rows[0][]> = {};
-    rows.forEach((row: any) => {
-      const dateStr = row.showDate instanceof Date ? formatDate(row.showDate) : row.showDate;
-      if (!grouped[dateStr]) grouped[dateStr] = [];
-      grouped[dateStr].push(row);
+    // Group shows by date in JS (fast for small datasets like 3 days)
+    const showsByDate: Record<string, any[]> = {};
+    rows.forEach((row:any) => {
+      const date = row.showDate; // Already a string in your DB
+      if (!showsByDate[date]) showsByDate[date] = [];
+      showsByDate[date].push({
+        showId: row.showId,
+        showTime: row.showTime,
+        screenId: row.screenId,
+      });
     });
+
+    // Movie info (all rows have same movie data)
+    const { title, genre, imageUrl, description, release } = rows[0];
 
     return c.json({
-      movieDetails: { id, title, description, imageLink, genre },
-      shows: grouped
+      message: "Shows for this movie in the next 3 days",
+      movie: { title, genre, imageUrl, description, release },
+      shows: showsByDate,
     });
-
-  } catch (err) {
-    console.error("Error fetching movie shows:", err);
-    return c.json({ message: "Internal server error", error: String(err) }, 500);
+  } catch (err: any) {
+    console.error(err);
+    return c.json({ message: "Internal server error", error: err.message }, 500);
   }
 });
 
+
 showRoutes.get('/:id', async (c) => {
-  const { id } = c.req.param();
-  try {
-    const db = connectDb();
-    const show: Show = await db.select().from(shows).where(eq(shows.id, Number(id)));
-    if (!show) {
-      return c.json({ message: `Show with ID: ${id} not found` }, 404);
+    const { id } = c.req.param();
+    try {
+        const db = connectDb();
+        const show: Show = await db.select().from(shows).where(eq(shows.id, Number(id)));
+        if (!show) {
+            return c.json({ message: `Show with ID: ${id} not found` }, 404);
+        }
+        return c.json({ message: `Get show with ID: ${id}`, show });
     }
-    return c.json({ message: `Get show with ID: ${id}`, show });
-  }
-  catch (err: any) {
-    return c.json({ message: 'Internal Server Error', error: err.message }, 500);
-  }
+    catch (err: any) {
+        return c.json({ message: 'Internal Server Error', error: err.message }, 500);
+    }
 });
 
 
 
 showRoutes.put('/:id', async (c) => {
-  const { id } = c.req.param();
-  const data = await c.req.json();
-  try {
-    const db = connectDb();
+    const { id } = c.req.param();
+    const data = await c.req.json();
+    try {
+        const db = connectDb();
 
 
 
-    const updatedShow = await db.update(shows).set(data).where(eq(shows.id, Number(id))).execute();
-    return c.json({ message: `Update show with ID: ${id}`, show: updatedShow });
-  }
-  catch (err: any) {
-    return c.json({ message: 'Internal Server Error', error: err.message }, 500);
-  }
+        const updatedShow = await db.update(shows).set(data).where(eq(shows.id, Number(id))).execute();
+        return c.json({ message: `Update show with ID: ${id}`, show: updatedShow });
+    }
+    catch (err: any) {
+        return c.json({ message: 'Internal Server Error', error: err.message }, 500);
+    }
 });
 
 showRoutes.delete('/:id', async (c) => {
-  const { id } = c.req.param();
-  try {
-    const db = connectDb();
+    const { id } = c.req.param();
+    try {
+        const db = connectDb();
 
-    await db.delete(shows).where(eq(shows.id, Number(id)));
-    return c.json({ message: `Delete show with ID: ${id}` });
+        await db.delete(shows).where(eq(shows.id, Number(id)));
+        return c.json({ message: `Delete show with ID: ${id}` });
 
-  }
-  catch (err: any) {
-    return c.json({ message: 'Internal Server Error', error: err.message }, 500);
-  }
+    }
+    catch (err: any) {
+        return c.json({ message: 'Internal Server Error', error: err.message }, 500);
+    }
 
 });
+
 
 
 

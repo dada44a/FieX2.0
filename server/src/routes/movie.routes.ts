@@ -10,7 +10,7 @@ movieRoutes.get('/', async (c) => {
   try {
     const db = connectDb();
     const movieList: Movie[] = await db.select().from(movies).execute();
-    return c.json({ data: movieList , message: 'List of movies' });
+    return c.json({ data: movieList, message: 'List of movies' });
   } catch (error: any) {
     console.error(error);
     return c.json({ message: 'Error fetching movies', error: error.message }, 500);
@@ -19,49 +19,54 @@ movieRoutes.get('/', async (c) => {
 
 // ? Create a new movie
 movieRoutes.post('/', async (c) => {
-    const data: NewMovie = await c.req.json();
-    try{
-        const db = connectDb();
-        const newMovie: NewMovie = await db.insert(movies).values(data).returning();
-        return c.json({ message: 'Create a new movie', data: newMovie });
-    } catch (error: any) {
-        console.error('Error creating movie:', error.message);
-        return c.json({ message: 'Error creating movie', error: error.message }, 500);
-    }
-}); 
+  const data: NewMovie = await c.req.json();
+  try {
+    const db = connectDb();
+    const newMovie: NewMovie = await db.insert(movies).values(data).returning();
+    return c.json({ message: 'Create a new movie', data: newMovie });
+  } catch (error: any) {
+    console.error('Error creating movie:', error.message);
+    return c.json({ message: 'Error creating movie', error: error.message }, 500);
+  }
+});
 
 movieRoutes.get("/next-three", async (c) => {
-  const db = connectDb();
+  try {
+    const db = connectDb();
 
-  const today = new Date();
-  const endDate = new Date();
-  endDate.setDate(today.getDate() + 2);
+    const today = new Date();
+    const endDate = new Date();
+    endDate.setDate(today.getDate() + 2);
 
-  const todayStr = today.toISOString().split("T")[0];
-  const endDateStr = endDate.toISOString().split("T")[0];
+    const todayStr = today.toISOString().split("T")[0];
+    const endDateStr = endDate.toISOString().split("T")[0];
 
-  // Fetch movies that have shows in the next 3 days
-  const moviesWithShows = await db
-    .select({
-      id: movies.id,
-      title: movies.title,
-      genre: movies.genre,
-      imageUrl: movies.imageLink,
-    })
-    .from(movies)
-    .innerJoin(shows, eq(movies.id, shows.movieId))
-    .where(
-      and(
-        gte(shows.showDate, todayStr),
-        lte(shows.showDate, endDateStr)
+    // Fetch movies that have shows in the next 3 days
+    const moviesWithShows = await db
+      .select({
+        id: movies.id,
+        title: movies.title,
+        genre: movies.genre,
+        imageUrl: movies.imageLink,
+      })
+      .from(movies)
+      .innerJoin(shows, eq(movies.id, shows.movieId))
+      .where(
+        and(
+          gte(shows.showDate, todayStr),
+          lte(shows.showDate, endDateStr)
+        )
       )
-    )
-    .groupBy(movies.id).execute(); // ensures unique movies
+      .groupBy(movies.id).execute(); // ensures unique movies
 
-  return c.json({
-    message: "Movies with shows in the next 3 days",
-    movies: moviesWithShows,
-  });
+    return c.json({
+      message: "Movies with shows in the next 3 days",
+      movies: moviesWithShows,
+    });
+  } catch (error: any) {
+    console.error("Error fetching next-three movies:", error);
+    return c.json({ message: "Error fetching movies", error: error.message }, 500);
+  }
 });
 
 movieRoutes.get('/:id', async (c) => {

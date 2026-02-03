@@ -18,11 +18,13 @@ import { clerkMiddleware } from "@hono/clerk-auth";
 export const app = new Hono();
 
 app.use("*", prettyJSON());
-app.use("*", cors());
+app.use("*", cors(
+  { origin: "*" }
+));
 app.use("*", clerkMiddleware());
 
 
-app.use("/api/inngest", InngestServe({ client: inngest, functions}));
+app.use("/api/inngest", InngestServe({ client: inngest, functions }));
 // routes
 app.route("/api/seats", seatRoutes);
 app.route("/api/screens", screenRoutes);
@@ -84,10 +86,10 @@ app.post("/initiate", async (c) => {
   }
 });
 
-// serve({
-//   fetch: app.fetch,
-//   port: 4000
-// }, (info) => {
-//   console.log(`Server is running on http://localhost:${info.port}`)
-// })
+serve({
+  fetch: app.fetch,
+  port: 4000
+}, (info) => {
+  console.log(`Server is running on http://localhost:${info.port}`)
+})
 export default app;
