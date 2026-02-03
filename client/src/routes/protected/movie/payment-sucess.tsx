@@ -1,4 +1,4 @@
-import { createFileRoute, useSearch } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/protected/movie/payment-sucess')({
   component: RouteComponent,
@@ -20,6 +20,5 @@ export const Route = createFileRoute('/protected/movie/payment-sucess')({
 })
 
 function RouteComponent() {
-  const search = useSearch({ from: Route })
   return <div>Hello "/protected/movie/payment-sucess"!</div>
 }

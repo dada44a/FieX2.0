@@ -37,7 +37,7 @@ const UserManagement = () => {
   const edit = useEditData();
   const deleteData = useDeleteData();
 
-  const { data, isLoading, isError } = useQuery({
+  const { data } = useQuery({
     queryKey: ['users'],
     queryFn: async (): Promise<User[]> => {
       const res = await fetch('http://localhost:4000/api/users');
@@ -87,14 +87,14 @@ const UserManagement = () => {
             role: values.value.role,
           },
           queryKey: ['users']
-        })  
+        })
         setIsEditing(false);
       } else {
         deleteData.mutateAsync({
           link: `/api/users/${users}`,
           queryKey: ['users']
         })
-        
+
       }
     }
   })
@@ -103,7 +103,7 @@ const UserManagement = () => {
   return (
     <>
       <div className="flex flex-row items-center gap-2">
-        <input type="text" placeholder="Type here" className="input my-3 outline-0" value={users} disabled/>
+        <input type="text" placeholder="Type here" className="input my-3 outline-0" value={users} disabled />
       </div>
 
       <form className="flex gap-2" onSubmit={
