@@ -4,7 +4,7 @@ import { useAddData, useDeleteData, useEditData } from '@/hooks/useAddData';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { createColumnHelper } from '@tanstack/react-table';
-import {useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 interface Seat {
   id?: number;
@@ -23,7 +23,7 @@ function RouteComponent() {
   const addData = useAddData();
   const removeData = useDeleteData();
   const editData = useEditData();
-  const screenId =Route.useParams().screenid;
+  const screenId = Route.useParams().screenid;
 
   const [editState, setEditState] = useState('');
   const [seats, setSeats] = useState('');
@@ -33,7 +33,7 @@ function RouteComponent() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['seats', screenId],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:4000/api/seats/all/${screenId}`);
+      const res = await fetch(`${import.meta.env.VITE_API_LINK}/api/seats/all/${screenId}`);
       if (!res.ok) throw new Error('Failed to fetch seats');
       const json = await res.json();
       return json.data;
@@ -103,7 +103,7 @@ function RouteComponent() {
     }
   };
 
-   const column  = useMemo(() => {
+  const column = useMemo(() => {
     return [
 
       columnHelper.accessor('id', { header: 'ID' }),
@@ -119,14 +119,14 @@ function RouteComponent() {
           </button>
         )
       }),
-    ];  
+    ];
   }, []);
-   
+
 
   // --- Loading skeleton ---
   if (isLoading)
     return (
-     <LoadingTable wantToShow={true} />
+      <LoadingTable wantToShow={true} />
     );
 
   // --- Error state ---

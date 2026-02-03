@@ -59,7 +59,7 @@ function RouteComponent() {
     queryKey: ['reports', startDate, endDate],
     queryFn: async (): Promise<any> => {
       const res = await fetch(
-        `http://localhost:4000/api/reports/reports?start=${startDate}&end=${endDate}`
+        `${import.meta.env.VITE_API_LINK}/api/reports/reports?start=${startDate}&end=${endDate}`
       );
       if (!res.ok) throw new Error('Failed to fetch reports');
       return res.json();

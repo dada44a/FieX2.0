@@ -22,7 +22,7 @@ const MovieManagement: React.FC = () => {
   const { isLoading, error, data } = useQuery({
     queryKey: ["movies"],
     queryFn: async () => {
-      const res = await fetch("http://localhost:4000/api/movies");
+      const res = await fetch(`${import.meta.env.VITE_API_LINK}/api/movies`);
       if (!res.ok) {
         throw new Error("Network response was not ok");
       }

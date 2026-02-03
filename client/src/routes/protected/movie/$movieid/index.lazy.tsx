@@ -26,7 +26,7 @@ function RouteComponent() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['movie', movieid],
     queryFn: () =>
-      fetch(`http://localhost:4000/api/shows/${movieid}/next-three`).then(res => res.json()),
+      fetch(`${import.meta.env.VITE_API_LINK}/api/shows/${movieid}/next-three`).then(res => res.json()),
   });
 
   if (isLoading) return <div>Loading...</div>;

@@ -26,10 +26,10 @@ const ScreenManagement: React.FC = () => {
 
   const columnHelper = createColumnHelper<Screen>();
   /** ---------- FETCH SCREENS ---------- */
-  const {data, isLoading, isError} = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['screens'],
     queryFn: async () => {
-      const res = await fetch("http://localhost:4000/api/screens");
+      const res = await fetch(`${import.meta.env.VITE_API_LINK}/api/screens`);
       if (!res.ok) {
         throw new Error("Failed to fetch screens");
       }
@@ -178,8 +178,8 @@ const ScreenManagement: React.FC = () => {
         />
       </form>
       {isLoading && <LoadingTable wantToShow={false} />}
-      
-      {isError?<div>Error loading screens</div> :<Table data={data || []} columns={columns} />}
+
+      {isError ? <div>Error loading screens</div> : <Table data={data || []} columns={columns} />}
 
 
     </div>

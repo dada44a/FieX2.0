@@ -28,7 +28,7 @@ function RouteComponent() {
 
   const handleUpdate = async () => {
     try {
-      await fetch('http://localhost:4000/api/seats/booked', {
+      await fetch(`${import.meta.env.VITE_API_LINK}/api/seats/booked`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

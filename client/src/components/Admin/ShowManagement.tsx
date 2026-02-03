@@ -4,7 +4,7 @@ import { LoadingTable } from "../loadingtable";
 import { createColumnHelper } from "@tanstack/react-table";
 import Table from "../Table";
 
-const BASE_URL = "http://localhost:4000";
+const BASE_URL = import.meta.env.VITE_API_LINK;
 
 interface Show {
   id: number;
@@ -195,7 +195,7 @@ const ShowManagement: React.FC = () => {
         </button>
       ),
     }),
-  ], [screens]);  
+  ], [screens]);
 
   if (loading) return <LoadingTable wantToShow={false} />;
 

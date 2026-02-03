@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import Table from "../Table";
 import { LoadingTable } from "../loadingtable";
 
-const BASE_URL = "http://localhost:4000/api/tickets";
+const BASE_URL = `${import.meta.env.VITE_API_LINK}/api/tickets`;
 
 type Ticket = {
   id: number;

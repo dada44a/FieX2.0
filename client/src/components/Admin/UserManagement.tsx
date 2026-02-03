@@ -40,7 +40,7 @@ const UserManagement = () => {
   const { data } = useQuery({
     queryKey: ['users'],
     queryFn: async (): Promise<User[]> => {
-      const res = await fetch('http://localhost:4000/api/users');
+      const res = await fetch(`${import.meta.env.VITE_API_LINK}/api/users`);
       if (!res.ok) throw new Error('Failed to fetch users');
       return res.json();
     }

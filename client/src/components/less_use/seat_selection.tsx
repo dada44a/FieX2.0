@@ -28,7 +28,7 @@ export default function SeatSelection({ showId, onSeatSelectChange }: SeatSelect
   const { data = [], isLoading, isError } = useQuery({
     queryKey: ["seats", showId],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:4000/api/seats/${showId}`);
+      const res = await fetch(`${import.meta.env.VITE_API_LINK}/api/seats/${showId}`);
       const json = await res.json();
       return json.data as Seat[];
     },
@@ -41,7 +41,7 @@ export default function SeatSelection({ showId, onSeatSelectChange }: SeatSelect
   const { data: showData, isLoading: isShowLoading } = useQuery({
     queryKey: ["show-details", showId],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:4000/api/shows/${showId}`);
+      const res = await fetch(`${import.meta.env.VITE_API_LINK}/api/shows/${showId}`);
       const json = await res.json();
       return json.show;
     },
@@ -106,7 +106,7 @@ export default function SeatSelection({ showId, onSeatSelectChange }: SeatSelect
     });
 
     try {
-      const res = await fetch(`http://localhost:4000/api/seats/${endpoint}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_LINK}/api/seats/${endpoint}`, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ showId, row: seat.row, column: seat.column, userId }),

@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const fetchRole = async () => {
       try {
-        const res = await fetch(`http://localhost:4000/api/users/${userId}`);
+        const res = await fetch(`${import.meta.env.VITE_API_LINK}/api/users/${userId}`);
 
         if (!res.ok) throw new Error("Failed to fetch role");
 

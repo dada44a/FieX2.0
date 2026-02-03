@@ -32,7 +32,7 @@ function RouteComponent() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['monthly-stats'],
     queryFn: async (): Promise<MonthlyStatsResponse> => {
-      const res = await fetch('http://localhost:4000/api/reports/monthly-stats');
+      const res = await fetch(`${import.meta.env.VITE_API_LINK}/api/reports/monthly-stats`);
       if (!res.ok) throw new Error('Failed to fetch monthly stats');
       return res.json();
     }
