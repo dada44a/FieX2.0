@@ -16,7 +16,7 @@ function App() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['next-three-movies'],
     queryFn: async () => {
-      const res = await fetch('http://localhost:4000/api/movies/next-three')
+      const res = await fetch(`${import.meta.env.VITE_API_LINK}/api/movies/next-three`)
       if (!res.ok) throw new Error('Failed to fetch movies')
       const json = await res.json()
       return Array.isArray(json.movies) ? json.movies : []
