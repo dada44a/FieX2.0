@@ -264,7 +264,7 @@ const reserve_seats = inngest.createFunction(
         })
         .from(shows)
         .where(eq(shows.id, Number(id)))
-        .then((res: any) => res[0].reservedSeats);  
+        .then((res: any) => res[0].reservedSeats);
 
       await db.update(shows).set({
         reservedSeats: reservedSeatsCount + updatedCount,
@@ -297,7 +297,7 @@ const sendTicketEmail = inngest.createFunction(
       await step.sleep("wait-before-fetch", "30s"); // wait 2 seconds
 
 
-      const fetched = await fetch(`http://localhost:4000/api/tickets/${ticket_id}/qr`);
+      const fetched = await fetch(`https://fie-x2-0.vercel.app/api/tickets/${ticket_id}/qr`);
       const { data } = await fetched.json();
       const { data: qrData, qrCode } = data;
       const subject = "Your Movie Ticket";
