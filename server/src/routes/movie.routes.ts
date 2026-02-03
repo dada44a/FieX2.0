@@ -73,7 +73,8 @@ movieRoutes.get('/:id', async (c) => {
   const { id } = c.req.param();
   try {
     const db = connectDb();
-    const movie: Movie = await db.select().from(movies).where(eq(movies.id, Number(id)));
+    const result = await db.select().from(movies).where(eq(movies.id, Number(id))).execute();
+    const movie = result[0];
     if (!movie) {
       return c.json({ message: `Movie with ID ${id} not found` }, 404);
     }

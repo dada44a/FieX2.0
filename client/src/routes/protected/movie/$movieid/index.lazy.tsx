@@ -39,7 +39,7 @@ function RouteComponent() {
     <div className="min-h-screen p-4">
       {/* Movie Info Section */}
       <Suspense fallback={<div>Loading movie info...</div>}>
-        <MovieInfo movie={data?.movieDetails} />
+        <MovieInfo movie={data?.movie} />
       </Suspense>
 
       <div className="mb-50">

@@ -13,6 +13,7 @@ import { functions, inngest } from "./inngest/index.js";
 import { serve as InngestServe } from "inngest/hono";
 import testRoutes from "./routes/test.route.js";
 import { reportsRoutes } from "./routes/reports.routes.js";
+import requestRoutes from "./routes/request.routes.js";
 import { clerkMiddleware } from "@hono/clerk-auth";
 
 export const app = new Hono();
@@ -21,10 +22,8 @@ app.use("*", prettyJSON());
 app.use("*", cors(
   { origin: "*" }
 ));
-app.use("*", clerkMiddleware());
-
-
 app.use("/api/inngest", InngestServe({ client: inngest, functions }));
+app.use("*", clerkMiddleware());
 // routes
 app.route("/api/seats", seatRoutes);
 app.route("/api/screens", screenRoutes);
@@ -34,6 +33,7 @@ app.route("/api/shows", showRoutes);
 app.route("/api/tickets", ticketRoutes);
 app.route("/api/test", testRoutes);
 app.route("/api/reports", reportsRoutes);
+app.route("/api/requests", requestRoutes);
 
 app.get("/", (c) => {
   return c.json({ message: "Hello, World!" });
@@ -60,7 +60,7 @@ app.post("/initiate", async (c) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          return_url: `http://localhost:3000/protected/movie/payment-success?showId=${showId}&customerId=${customerId}&phone=${phone}`,
+          return_url: `http://localhost:3000/protected/movie/payment-success?showId=${showId}&customerId=${customerId}&phone=${encodeURIComponent(phone)}`,
           website_url: "http://localhost:3000",
           amount,
           purchase_order_id: Date.now().toString(),
@@ -71,6 +71,11 @@ app.post("/initiate", async (c) => {
     );
 
     const khalti = await res.json();
+
+    if (!res.ok) {
+      console.error("Khalti API Error:", khalti);
+      return c.json({ error: "Failed to initiate payment", details: khalti }, 400);
+    }
 
     // 🔥 Return payment_url directly to frontend
     return c.json({

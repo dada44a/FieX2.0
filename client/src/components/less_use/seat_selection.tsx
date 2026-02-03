@@ -36,7 +36,26 @@ export default function SeatSelection({ showId, onSeatSelectChange }: SeatSelect
     refetchInterval: 100,
     refetchIntervalInBackground: true // refetch every 100ms for real-time updates
   });
-  
+
+  // [NEW] Fetch Show Details to check time
+  const { data: showData, isLoading: isShowLoading } = useQuery({
+    queryKey: ["show-details", showId],
+    queryFn: async () => {
+      const res = await fetch(`http://localhost:4000/api/shows/${showId}`);
+      const json = await res.json();
+      return json.show;
+    },
+    enabled: !!showId
+  });
+
+  // Determine if booking is closed
+  const isBookingClosed = (() => {
+    if (!showData) return false;
+    const showDateTime = new Date(`${showData.showDate}T${showData.showTime}`);
+    const now = new Date();
+    return now > showDateTime;
+  })();
+
   // Helper function to get the current selected seats
   const getCurrentUserSelectedSeats = (): Seat[] => {
     return data.filter(seat => {
@@ -52,7 +71,7 @@ export default function SeatSelection({ showId, onSeatSelectChange }: SeatSelect
     if (!isLoading && !isError) {
       const currentSelected = getCurrentUserSelectedSeats();
       // Call the callback to pass the selected seats array to the parent
-      onSeatSelectChange(currentSelected); 
+      onSeatSelectChange(currentSelected);
     }
   }, [data, localSelection, isLoading, isError, userId, onSeatSelectChange]); // Dependencies ensure it runs when state updates
 
@@ -70,20 +89,20 @@ export default function SeatSelection({ showId, onSeatSelectChange }: SeatSelect
     if (seat.status === "BOOKED" || (seat.status === "SELECTED" && seat.booked_by !== userId)) {
       return;
     }
-    
+
     // Determine the API endpoint and HTTP method
     const method = isDeselect ? "DELETE" : "PUT";
-    const endpoint = isDeselect ? 'release' : 'inactive'; 
+    const endpoint = isDeselect ? 'release' : 'inactive';
 
     // Optimistically update local selection
     setLocalSelection((prev) => {
-        const updated = new Set(prev);
-        if (isDeselect) {
-            updated.delete(seat.id);
-        } else {
-            updated.add(seat.id);
-        }
-        return updated;
+      const updated = new Set(prev);
+      if (isDeselect) {
+        updated.delete(seat.id);
+      } else {
+        updated.add(seat.id);
+      }
+      return updated;
     });
 
     try {
@@ -122,11 +141,11 @@ export default function SeatSelection({ showId, onSeatSelectChange }: SeatSelect
       setLocalSelection((prev) => {
         const updated = new Set(prev);
         if (!isDeselect) {
-            updated.delete(seat.id);
-          } else {
-            updated.add(seat.id);
-          }
-          return updated;
+          updated.delete(seat.id);
+        } else {
+          updated.add(seat.id);
+        }
+        return updated;
       });
     }
   };
@@ -143,9 +162,23 @@ export default function SeatSelection({ showId, onSeatSelectChange }: SeatSelect
 
   const rows = Object.keys(seatsByRow).sort();
 
+
+
+  if (isShowLoading) return <div className="skeleton h-64 w-full"></div>;
+
   return (
-    <div className="flex flex-col gap-2">
-        <div className="flex justify-center items-center h-4 w-full rounded-t-lg mb-4">Screen</div>
+    <div className="flex flex-col gap-2 relative">
+      {/* Booking Closed Overlay */}
+      {isBookingClosed && (
+        <div className="absolute inset-0 bg-base-100/80 z-50 flex items-center justify-center rounded-lg backdrop-blur-sm">
+          <div className="bg-error text-error-content px-6 py-4 rounded-xl shadow-2xl font-bold text-lg border border-error">
+            Booking Closed
+            <span className="block text-sm font-normal mt-1 opacity-90">This show has already started.</span>
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-center items-center h-4 w-full rounded-t-lg mb-4">Screen</div>
       {rows.map((row) => (
         <div key={row} className="flex gap-2 justify-center">
           {Array.from({ length: seatsByRow[row] }, (_, i) => {
@@ -165,17 +198,17 @@ export default function SeatSelection({ showId, onSeatSelectChange }: SeatSelect
               seat.status === "BOOKED"
                 ? "bg-error cursor-not-allowed" // Booked by anyone
                 : isUserSelected // Locally pending or globally selected by current user
-                ? "bg-accent hover:bg-blue-600 cursor-pointer"
-                : seat.status === "SELECTED" // Selected by another user
-                ? "bg-warning cursor-not-allowed"
-                : "bg-primary hover:bg-green-500 cursor-pointer"; // Available
+                  ? "bg-accent hover:bg-blue-600 cursor-pointer"
+                  : seat.status === "SELECTED" // Selected by another user
+                    ? "bg-warning cursor-not-allowed"
+                    : "bg-primary hover:bg-green-500 cursor-pointer"; // Available
 
             return (
               <div
                 key={`${row}-${colNum}`}
                 onClick={() => {
-                  seat && toggleSeat(seat) 
-                 }}
+                  seat && toggleSeat(seat)
+                }}
                 className={`w-10 h-10 rounded-md flex items-center justify-center text-white font-semibold ${color}`}
               >
                 {row}-{colNum}
@@ -186,23 +219,23 @@ export default function SeatSelection({ showId, onSeatSelectChange }: SeatSelect
       ))}
       <div className="flex justify-center gap-4 mt-4">
         <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-primary"></div>
-            <p className="text-sm">Available</p>
+          <div className="w-4 h-4 rounded-full bg-primary"></div>
+          <p className="text-sm">Available</p>
         </div>
         <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-accent"></div>
-            <p className="text-sm">Your Selection</p>
+          <div className="w-4 h-4 rounded-full bg-accent"></div>
+          <p className="text-sm">Your Selection</p>
         </div>
         <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-warning"></div>
-            <p className="text-sm">Held by Others</p>
+          <div className="w-4 h-4 rounded-full bg-warning"></div>
+          <p className="text-sm">Held by Others</p>
         </div>
         <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-error"></div>
-            <p className="text-sm">Booked</p>
+          <div className="w-4 h-4 rounded-full bg-error"></div>
+          <p className="text-sm">Booked</p>
         </div>
       </div>
-      
+
     </div>
   );
 }

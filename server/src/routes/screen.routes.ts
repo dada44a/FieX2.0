@@ -2,14 +2,14 @@ import { Hono } from "hono";
 import { connectDb } from "../db/init.js";
 import { screens, seats } from "../db/schema.js";
 import { eq } from "drizzle-orm";
-import type {  NewScreens, Screens, Seat } from "../types.js";
+import type { NewScreens, Screens, Seat } from "../types.js";
 
 const screenRoutes = new Hono();
 
-screenRoutes.get('/', async(c) => {
+screenRoutes.get('/', async (c) => {
   try {
     const db = connectDb();
-    const screensList: Screens[] = await db.select().from(screens);
+    const screensList: Screens[] = await db.select().from(screens).execute();
     return c.json({ message: 'List of screens', data: screensList });
   } catch (error: any) {
     return c.json({ message: 'Error fetching screens', error: error.message }, 500);
@@ -20,7 +20,8 @@ screenRoutes.get('/:id', async (c) => {
   const { id } = c.req.param();
   try {
     const db = connectDb();
-    const screen: Screens = await db.select().from(screens).where(eq(screens.id, Number(id)));
+    const result = await db.select().from(screens).where(eq(screens.id, Number(id))).execute();
+    const screen = result[0];
     if (!screen) {
       return c.json({ message: `Screen with ID ${id} not found` }, 404);
     }
@@ -45,7 +46,7 @@ screenRoutes.post('/', async (c) => {
 screenRoutes.put('/:id', async (c) => {
   const { id } = c.req.param();
   const data = await c.req.json();
-  try{
+  try {
     const db = connectDb();
     await db.update(screens).set(data).where(eq(screens.id, Number(id))).returning();
     return c.json({ message: `Update screen with ID ${id}`, data });
@@ -58,7 +59,7 @@ screenRoutes.put('/:id', async (c) => {
 
 screenRoutes.delete('/:id', async (c) => {
   const { id } = c.req.param();
-  try{
+  try {
     const db = connectDb();
     await db.delete(screens).where(eq(screens.id, Number(id))).returning();
     return c.json({ message: `Delete screen with ID ${id}` });
@@ -69,9 +70,9 @@ screenRoutes.delete('/:id', async (c) => {
 });
 
 // get seats by screen ID
-screenRoutes.get("/:id/seats", async (c)=>{
-  const {id} = c.req.param();
-  try{
+screenRoutes.get("/:id/seats", async (c) => {
+  const { id } = c.req.param();
+  try {
     const db = connectDb();
 
     const screenExists = await db.select().from(screens).where(eq(screens.id, Number(id))).limit(1);
@@ -79,7 +80,7 @@ screenRoutes.get("/:id/seats", async (c)=>{
       return c.json({ message: `Screen with ID ${id} not found` }, 404);
     }
 
-    const seatList: Seat [] = await db.select().from(seats).where(eq(seats.screenId, Number(id)));
+    const seatList: Seat[] = await db.select().from(seats).where(eq(seats.screenId, Number(id)));
     return c.json({ message: `List of seats for screen ID ${id}`, data: seatList });
   } catch (error: any) {
     console.error('Error fetching seats:', error.message);

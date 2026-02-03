@@ -12,7 +12,7 @@ export const Navbar = React.memo(() => {
                 <ul className="menu menu-horizontal px-1">
                     <li>
                         <SignedOut>
-                            <SignInButton mode='modal'/>
+                            <SignInButton mode='modal' />
                         </SignedOut>
                         <SignedIn>
                             <UserButton />
@@ -23,6 +23,7 @@ export const Navbar = React.memo(() => {
                             <summary>Pages</summary>
                             <ul className="bg-base-100 rounded-t-none p-2">
                                 <li><Link to="/protected/user/profile">Profile</Link></li>
+                                <li><Link to="/request-movie">Request Movie</Link></li>
                             </ul>
                         </details>
                     </li>

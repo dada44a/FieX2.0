@@ -8,6 +8,7 @@ import {
   boolean,
   date,
   time,
+  timestamp,
   pgEnum,
 } from "drizzle-orm/pg-core";
 
@@ -95,4 +96,14 @@ export const showSeats = pgTable("show_seats", {
   booked_by: varchar("booked_by", { length: 255 }),
   ticketId: integer("ticket_id").references(() => tickets.id, { onDelete: "cascade" }),
   bookedTime: text("booked_time"),
+});
+
+// ------------------ MOVIE REQUEST ------------------
+export const movieRequests = pgTable("movie_requests", {
+  id: serial("id").primaryKey(),
+  movieTitle: varchar("movie_title", { length: 255 }).notNull(),
+  description: text("description"),
+  userId: text("user_id"),
+  status: varchar("status", { length: 20 }).default('PENDING').notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });

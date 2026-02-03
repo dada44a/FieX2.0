@@ -102,6 +102,7 @@ ticketRoutes.get("/:id/qr", async (c) => {
     const ticketsForUser = await db
       .select({
         id: tickets.id,
+        isUsed: tickets.isUsed,
         movie: movies.title,
         genre: movies.genre,
         screen: screens.name,
@@ -131,6 +132,7 @@ ticketRoutes.get("/:id/qr", async (c) => {
 
     const qrData = {
       ...ticket,
+      isUsed: ticket.isUsed,
       seats: seats.map((s: any) => `${s.row}${s.column}`)
     };
 
@@ -172,5 +174,75 @@ ticketRoutes.put("/used/:id", async (c) => {
   }
 });
 
+
+ticketRoutes.post("/validate", async (c) => {
+  try {
+    const { ticketId } = await c.req.json();
+    if (!ticketId) return c.json({ message: "Ticket ID is required" }, 400);
+
+    const db = connectDb();
+
+    // 1. Fetch Ticket & Show Details
+    const ticketData = await db
+      .select({
+        id: tickets.id,
+        isUsed: tickets.isUsed,
+        showDate: shows.showDate,
+        showTime: shows.showTime,
+        movieTitle: movies.title,
+      })
+      .from(tickets)
+      .innerJoin(shows, eq(tickets.showId, shows.id))
+      .innerJoin(movies, eq(shows.movieId, movies.id))
+      .where(eq(tickets.id, Number(ticketId)))
+      .execute();
+
+    if (!ticketData.length) {
+      return c.json({ success: false, message: "Invalid Ticket ID" }, 404);
+    }
+
+    const ticket = ticketData[0];
+
+    // 2. Check if already used
+    if (ticket.isUsed) {
+      return c.json({ success: false, message: "Ticket already used" }, 400);
+    }
+
+    // 3. Time Validation (Cannot validate 1 hour after start)
+    const showDateTimeStr = `${ticket.showDate}T${ticket.showTime}`;
+    const showStart = new Date(showDateTimeStr);
+    const now = new Date();
+
+    // Add 1 hour buffer
+    const validationDeadline = new Date(showStart.getTime() + 60 * 60 * 1000);
+
+    if (now > validationDeadline) {
+      return c.json({
+        success: false,
+        message: "Validation Expired: Show started over 1 hour ago."
+      }, 400);
+    }
+
+    // 4. Mark as Used
+    await db
+      .update(tickets)
+      .set({ isUsed: true })
+      .where(eq(tickets.id, Number(ticketId)))
+      .execute();
+
+    return c.json({
+      success: true,
+      message: "Ticket Verified Successfully",
+      data: {
+        movie: ticket.movieTitle,
+        showTime: ticket.showTime
+      }
+    });
+
+  } catch (error: any) {
+    console.error("Validation Error:", error);
+    return c.json({ success: false, message: "Server Error", error: error.message }, 500);
+  }
+});
 
 export default ticketRoutes;
