@@ -66,11 +66,11 @@
   ],
 
   "functions": {
-    "api/heavy-calculation.js": {
+    "api/heavy-calculation.ts": {
       "memory": 1024,
       "maxDuration": 30
     },
-    "api/auth/*.js": {
+    "api/auth/*.ts": {
       "memory": 512
     }
   }
