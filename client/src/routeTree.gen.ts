@@ -11,6 +11,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TestRouteImport } from './routes/test'
 import { Route as RequestMovieRouteImport } from './routes/request-movie'
 import { Route as ProtectedRouteRouteImport } from './routes/protected/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -46,6 +47,11 @@ const ProtectedUserProfileTicketidIndexLazyRouteImport = createFileRoute(
   '/protected/user/profile/$ticketid/',
 )()
 
+const TestRoute = TestRouteImport.update({
+  id: '/test',
+  path: '/test',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RequestMovieRoute = RequestMovieRouteImport.update({
   id: '/request-movie',
   path: '/request-movie',
@@ -177,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/protected': typeof ProtectedRouteRouteWithChildren
   '/request-movie': typeof RequestMovieRoute
+  '/test': typeof TestRoute
   '/protected/admin': typeof ProtectedAdminRouteRouteWithChildren
   '/protected/admin/reports': typeof ProtectedAdminReportsRouteRouteWithChildren
   '/protected/movie/payment-success': typeof ProtectedMoviePaymentSuccessRoute
@@ -198,6 +205,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/protected': typeof ProtectedRouteRouteWithChildren
   '/request-movie': typeof RequestMovieRoute
+  '/test': typeof TestRoute
   '/protected/movie/payment-success': typeof ProtectedMoviePaymentSuccessRoute
   '/protected/movie/payment-sucess': typeof ProtectedMoviePaymentSucessRoute
   '/protected/admin/add': typeof ProtectedAdminAddLazyRoute
@@ -218,6 +226,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/protected': typeof ProtectedRouteRouteWithChildren
   '/request-movie': typeof RequestMovieRoute
+  '/test': typeof TestRoute
   '/protected/admin': typeof ProtectedAdminRouteRouteWithChildren
   '/protected/admin/reports': typeof ProtectedAdminReportsRouteRouteWithChildren
   '/protected/movie/payment-success': typeof ProtectedMoviePaymentSuccessRoute
@@ -241,6 +250,7 @@ export interface FileRouteTypes {
     | '/'
     | '/protected'
     | '/request-movie'
+    | '/test'
     | '/protected/admin'
     | '/protected/admin/reports'
     | '/protected/movie/payment-success'
@@ -262,6 +272,7 @@ export interface FileRouteTypes {
     | '/'
     | '/protected'
     | '/request-movie'
+    | '/test'
     | '/protected/movie/payment-success'
     | '/protected/movie/payment-sucess'
     | '/protected/admin/add'
@@ -281,6 +292,7 @@ export interface FileRouteTypes {
     | '/'
     | '/protected'
     | '/request-movie'
+    | '/test'
     | '/protected/admin'
     | '/protected/admin/reports'
     | '/protected/movie/payment-success'
@@ -303,10 +315,18 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProtectedRouteRoute: typeof ProtectedRouteRouteWithChildren
   RequestMovieRoute: typeof RequestMovieRoute
+  TestRoute: typeof TestRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/test': {
+      id: '/test'
+      path: '/test'
+      fullPath: '/test'
+      preLoaderRoute: typeof TestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/request-movie': {
       id: '/request-movie'
       path: '/request-movie'
@@ -512,6 +532,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProtectedRouteRoute: ProtectedRouteRouteWithChildren,
   RequestMovieRoute: RequestMovieRoute,
+  TestRoute: TestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

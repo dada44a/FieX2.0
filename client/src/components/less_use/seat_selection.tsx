@@ -6,7 +6,7 @@ type Seat = {
   id: number;
   row: string;
   column: number;
-  status: "AVAILABLE" | "SELECTED" | "BOOKED";
+  status: "AVAILABLE" | "SELECTED" | "BOOKED" | "RESERVED";
   booked_by: string | null;
   screenId: number;
   showId: number;
@@ -197,17 +197,19 @@ export default function SeatSelection({ showId, onSeatSelectChange }: SeatSelect
             const color =
               seat.status === "BOOKED"
                 ? "bg-error cursor-not-allowed" // Booked by anyone
-                : isUserSelected // Locally pending or globally selected by current user
-                  ? "bg-accent hover:bg-blue-600 cursor-pointer"
-                  : seat.status === "SELECTED" // Selected by another user
-                    ? "bg-warning cursor-not-allowed"
-                    : "bg-primary hover:bg-green-500 cursor-pointer"; // Available
+                : seat.status === "RESERVED"
+                  ? "bg-secondary cursor-not-allowed"
+                  : isUserSelected // Locally pending or globally selected by current user
+                    ? "bg-accent hover:bg-blue-600 cursor-pointer"
+                    : seat.status === "SELECTED" // Selected by another user
+                      ? "bg-warning cursor-not-allowed"
+                      : "bg-primary hover:bg-green-500 cursor-pointer"; // Available
 
             return (
               <div
                 key={`${row}-${colNum}`}
                 onClick={() => {
-                  seat && toggleSeat(seat)
+                  seat && seat.status !== "RESERVED" && toggleSeat(seat)
                 }}
                 className={`w-10 h-10 rounded-md flex items-center justify-center text-white font-semibold ${color}`}
               >
@@ -233,6 +235,10 @@ export default function SeatSelection({ showId, onSeatSelectChange }: SeatSelect
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded-full bg-error"></div>
           <p className="text-sm">Booked</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full bg-secondary"></div>
+          <p className="text-sm">Reserved</p>
         </div>
       </div>
 

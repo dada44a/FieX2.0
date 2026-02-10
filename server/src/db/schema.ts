@@ -12,7 +12,7 @@ import {
   pgEnum,
 } from "drizzle-orm/pg-core";
 
-const seatStatus = pgEnum("seat_status", ["AVAILABLE", "SELECTED", "BOOKED"]);
+const seatStatus = pgEnum("seat_status", ["AVAILABLE", "SELECTED", "BOOKED", "RESERVED"]);
 // ------------------ USERS ------------------
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),

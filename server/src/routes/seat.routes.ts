@@ -133,22 +133,75 @@ seatRoutes.put("/booked", async (c) => {
 
 seatRoutes.put("/reserved", async (c) => {
   try {
-    const { id, userId} =
-      await c.req.json();
-    if (!id || !userId )
-      return c.json({ message: "Missing Value" });
+    const { id, userId } = await c.req.json();
+    if (!id || !userId) return c.json({ message: "Missing Value" });
 
     await inngest.send({
       name: "booking/reserve-seats",
       data: {
         id,
-        userId
+        userId,
       },
     });
 
-    return c.json({ message: " Seats booked" }, 200);
+    return c.json({ message: " Seats Reserved" }, 200);
   } catch (e: any) {
-    c.json({ message: "Error marking seat inactive", error: e.message }, 500);
+    c.json({ message: "Error marking seat reserve", error: e.message }, 500);
+  }
+});
+
+seatRoutes.get("/reserved-list", async (c) => {
+  try {
+    const db = connectDb();
+    const reservedSeats = await db
+      .select()
+      .from(showSeats)
+      .where(eq(showSeats.status, "RESERVED"))
+      .execute();
+    return c.json({ message: "List of reserved seats", data: reservedSeats });
+  } catch (error: any) {
+    return c.json(
+      { message: "Error fetching reserved seats", error: error.message },
+      500,
+    );
+  }
+});
+
+seatRoutes.post("/approve-reserved", async (c) => {
+  try {
+    const { seatId } = await c.req.json();
+    if (!seatId) return c.json({ message: "Missing seatId" }, 400);
+
+    await inngest.send({
+      name: "booking/approve-reserved-seats",
+      data: { seatId },
+    });
+
+    return c.json({ message: "Seat approval initiated" }, 200);
+  } catch (error: any) {
+    return c.json(
+      { message: "Error approving seat", error: error.message },
+      500,
+    );
+  }
+});
+
+seatRoutes.post("/reject-reserved", async (c) => {
+  try {
+    const { seatId } = await c.req.json();
+    if (!seatId) return c.json({ message: "Missing seatId" }, 400);
+
+    await inngest.send({
+      name: "booking/reject-reserved-seats",
+      data: { seatId },
+    });
+
+    return c.json({ message: "Seat rejection initiated" }, 200);
+  } catch (error: any) {
+    return c.json(
+      { message: "Error rejecting seat", error: error.message },
+      500,
+    );
   }
 });
 

@@ -426,6 +426,82 @@ const syncDeleteUser = inngest.createFunction(
     await db.delete(users).where(eq(users.clerkId, id)).returning();
   }
 );
+const approveReservedSeats = inngest.createFunction(
+  { id: "approve-reserved-seats" },
+  { event: "booking/approve-reserved-seats" },
+  async ({ event }) => {
+    try {
+      const db = connectDb();
+      const { seatId } = event.data;
+
+      const result = await db
+        .update(showSeats)
+        .set({
+          status: "BOOKED",
+        })
+        .where(eq(showSeats.id, seatId))
+        .execute();
+
+      return { success: true, updated: result.rowCount };
+    } catch (err: any) {
+      console.error("Failed to approve reserved seat:", err);
+      return { success: false, error: err.message };
+    }
+  },
+);
+
+const rejectReservedSeats = inngest.createFunction(
+  { id: "reject-reserved-seats" },
+  { event: "booking/reject-reserved-seats" },
+  async ({ event }) => {
+    try {
+      const db = connectDb();
+      const { seatId } = event.data;
+
+      // Get the seat to find showId
+      const seat = await db
+        .select()
+        .from(showSeats)
+        .where(eq(showSeats.id, seatId))
+        .then((res: any) => res[0]);
+
+      if (!seat) return { success: false, error: "Seat not found" };
+
+      const result = await db
+        .update(showSeats)
+        .set({
+          status: "AVAILABLE",
+          booked_by: null,
+          bookedTime: null,
+        })
+        .where(eq(showSeats.id, seatId))
+        .execute();
+
+      // Decrement reservedSeats in shows table
+      const show = await db
+        .select()
+        .from(shows)
+        .where(eq(shows.id, seat.showId))
+        .then((res: any) => res[0]);
+
+      if (show && show.reservedSeats > 0) {
+        await db
+          .update(shows)
+          .set({
+            reservedSeats: show.reservedSeats - 1,
+          })
+          .where(eq(shows.id, seat.showId))
+          .execute();
+      }
+
+      return { success: true, updated: result.rowCount };
+    } catch (err: any) {
+      console.error("Failed to reject reserved seat:", err);
+      return { success: false, error: err.message };
+    }
+  },
+);
+
 // Create an empty array where we'll export future Inngest functions
 export const functions = [
   helloWorld,
@@ -433,9 +509,11 @@ export const functions = [
   inActiveSeats,
   clearSelectedSeats,
   bookSeats,
-  sendTicketEmail,   // ← FIXED
+  sendTicketEmail, // ← FIXED
   syncUser,
   syncDeleteUser,
   testEmailFunction,
-
+  reserve_seats,
+  approveReservedSeats,
+  rejectReservedSeats,
 ];

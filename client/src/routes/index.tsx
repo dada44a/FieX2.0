@@ -66,23 +66,6 @@ function App() {
         </div>
       </section>
 
-      {/* Upcoming Section */}
-      <section className="mx-10 min-h-screen">
-        <h1 className="text-4xl font-bold">#Upcoming</h1>
-        <div className="py-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-          {isLoading &&
-            Array.from({ length: 4 }).map((_, index) => <CardSkeleton key={index} />)}
-
-          {isError && <p className="text-red-500">Failed to load movies</p>}
-
-          {!isLoading &&
-            movies.map((movie:any) => (
-              <Suspense key={movie.id} fallback={<CardSkeleton />}>
-                <MovieCard movie={movie} />
-              </Suspense>
-            ))}
-        </div>
-      </section>
     </>
   )
 }

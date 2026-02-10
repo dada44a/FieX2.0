@@ -22,7 +22,12 @@ const ScreenManagement = React.lazy(() => import('@/components/Admin/ScreenManag
 const ShowManagement = React.lazy(() => import('@/components/Admin/ShowManagement'));
 const TicketBookings = React.lazy(() => import('@/components/Admin/TicketBookings'));
 const UserManagement = React.lazy(() => import('@/components/Admin/UserManagement'));
-const RequestManagement = React.lazy(() => import('@/components/Admin/RequestManagement'));
+const RequestManagement = React.lazy(
+  () => import("@/components/Admin/RequestManagement"),
+);
+const ReservedSeats = React.lazy(
+  () => import("@/components/Admin/ReservedSeats"),
+);
 
 
 
@@ -123,6 +128,13 @@ function RouteComponent() {
           aria-label="Requests"
           onClick={() => setTabs(5)}
         />
+        <input
+          type="radio"
+          name="my_tabs_1"
+          className="tab "
+          aria-label="Reserved Seats"
+          onClick={() => setTabs(6)}
+        />
       </div>
 
       <div id="content" className="mt-3 p-4">
@@ -132,6 +144,7 @@ function RouteComponent() {
         <div className={tabs != 3 ? "hidden" : ""}><Suspense fallback={<div className='skeleton h-[400px] w-screen' />}><UserManagement /></Suspense></div>
         <div className={tabs != 4 ? "hidden" : ""}><Suspense fallback={<div className='skeleton h-[400px] w-screen' />}><ScreenManagement /></Suspense></div>
         <div className={tabs != 5 ? "hidden" : ""}><Suspense fallback={<div className='skeleton h-[400px] w-screen' />}><RequestManagement /></Suspense></div>
+        <div className={tabs != 6 ? "hidden" : ""}><Suspense fallback={<div className='skeleton h-[400px] w-screen' />}><ReservedSeats /></Suspense></div>
       </div>
 
 

@@ -1,4 +1,5 @@
 import { useUser } from '@clerk/clerk-react';
+import { useQuery } from '@tanstack/react-query';
 import { createLazyFileRoute } from '@tanstack/react-router'
 import React, { Suspense, useState, useMemo, useCallback } from 'react';
 
@@ -12,7 +13,7 @@ type Seat = {
   id: number;
   row: string;
   column: number;
-  status: "AVAILABLE" | "SELECTED" | "BOOKED";
+  status: "AVAILABLE" | "SELECTED" | "BOOKED" | "RESERVED";
   booked_by: string | null;
   screenId: number;
   showId: number;
@@ -29,42 +30,42 @@ export const Route = createLazyFileRoute('/protected/movie/$movieid/payment')({
 
 // ... (SeatSkeleton component remains the same) ...
 export const SeatSkeleton: React.FC = React.memo(() => {
-    return (
-      <div className='flex flex-col gap-5'>
-        <div className='flex gap-5 justify-center'>
-          <div className="skeleton w-[40px] h-[40px]" />
-          <div className="skeleton w-[40px] h-[40px]" />
-          <div className="skeleton w-[40px] h-[40px]" />
-          <div className="skeleton w-[40px] h-[40px]" />
-          <div className="skeleton w-[40px] h-[40px]" />
-        </div>
-        <div className='flex gap-5 justify-center'>
-          <div className="skeleton w-[40px] h-[40px]" />
-          <div className="skeleton w-[40px] h-[40px]" />
-          <div className="skeleton w-[40px] h-[40px]" />
-          <div className="skeleton w-[40px] h-[40px]" />
-          <div className="skeleton w-[40px] h-[40px]" />
-        </div>
-        <div className='flex gap-5 justify-center'>
-          <div className="skeleton w-[40px] h-[40px]" />
-          <div className="skeleton w-[40px] h-[40px]" />
-          <div className="skeleton w-[40px] h-[40px]" />
-          <div className="skeleton w-[40px] h-[40px]" />
-          <div className="skeleton w-[40px] h-[40px]" />
-        </div>
-        <div className='flex gap-5 justify-center'>
-          <div className="skeleton w-[40px] h-[40px]" />
-          <div className="skeleton w-[40px] h-[40px]" />
-          <div className="skeleton w-[40px] h-[40px]" />
-          <div className="skeleton w-[40px] h-[40px]" />
-          <div className="skeleton w-[40px] h-[40px]" />
-        </div>
+  return (
+    <div className='flex flex-col gap-5'>
+      <div className='flex gap-5 justify-center'>
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
       </div>
-    );
-  })
+      <div className='flex gap-5 justify-center'>
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+      </div>
+      <div className='flex gap-5 justify-center'>
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+      </div>
+      <div className='flex gap-5 justify-center'>
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+        <div className="skeleton w-[40px] h-[40px]" />
+      </div>
+    </div>
+  );
+})
 
 // Define a placeholder price per ticket
-const TICKET_PRICE = 300; 
+const TICKET_PRICE = 300;
 
 function RouteComponent() {
   const { movieid } = Route.useParams();
@@ -72,7 +73,7 @@ function RouteComponent() {
   const userId = user?.id; // Extract the userId
 
   // State to hold the selected Seat objects received from the child
-  const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]); 
+  const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
   const [isClearing, setIsClearing] = useState(false); // State for loading during clear
 
   // State for contact form
@@ -95,11 +96,11 @@ function RouteComponent() {
       return;
     }
 
-    const showId = Number(movieid); 
+    const showId = Number(movieid);
 
     try {
       setIsClearing(true);
-      
+
       const res = await fetch(`${import.meta.env.VITE_API_LINK}/api/seats/clear/${showId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -107,9 +108,9 @@ function RouteComponent() {
       });
 
       const data = await res.json();
-      
+
       if (res.ok) {
-        setSelectedSeats([]); 
+        setSelectedSeats([]);
         alert("Your seat selection has been cleared.");
       } else {
         alert(`Failed to clear seats: ${data.message || 'Unknown error'}`);
@@ -132,12 +133,55 @@ function RouteComponent() {
   }, [selectedSeats]);
 
 
+  const { data: userData } = useQuery({
+    queryKey: ['user-role', userId],
+    queryFn: () => fetch(`${import.meta.env.VITE_API_LINK}/api/users/${userId}`).then(res => res.json()),
+    enabled: !!userId,
+  });
+
+  const isAdminOrStaff = userData?.role === 'ADMIN' || userData?.role === 'STAFF';
+
+  const handleReserve = async () => {
+    if (selectedSeats.length === 0) {
+      alert("Please select at least one seat before proceeding.");
+      return;
+    }
+
+    if (!userId) {
+      alert("User authentication error. Please log in again.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_LINK}/api/seats/reserved`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: Number(movieid),
+          userId: userId,
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Seats reserved successfully. Waiting for admin approval.");
+        setSelectedSeats([]);
+      } else {
+        alert(`Failed to reserve seats: ${data.message || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error contacting server for reservation.");
+    }
+  };
+
   const handlepay = async () => {
     if (selectedSeats.length === 0) {
       alert("Please select at least one seat before proceeding.");
       return;
     }
-    
+
     // Ensure contact fields are filled (basic check)
     if (!name || !email || !phone) {
       alert("Please fill in your name, email, and phone number.");
@@ -153,7 +197,7 @@ function RouteComponent() {
       name,
       email,
       phone,
-      amount: totalAmountPaisa, 
+      amount: totalAmountPaisa,
       purchase_order_name: `Movie Tickets (${seatLabels})`,
       showId: Number(movieid),
       customerId: userId,
@@ -190,27 +234,38 @@ function RouteComponent() {
   return (
     <div className="min-h-screen p-4 flex items-center justify-center">
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start max-w-5xl w-full"> 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start max-w-5xl w-full">
 
         {/* SEAT LAYOUT */}
         <div className='p-4 rounded-lg shadow-inner'>
           <div className='flex justify-between items-center mb-4'>
             <h2 className='text-xl font-bold text-center'>Select Your Seats</h2>
             {/* NEW: Clear Selection Button */}
-            <button
-              className='btn btn-sm btn-outline btn-warning'
-              onClick={handleClearSelection}
-              disabled={selectedSeats.length === 0 || isClearing}
-            >
-              {isClearing ? 'Clearing...' : 'Clear Selection'}
-            </button>
+            <div className='flex gap-2'>
+              {isAdminOrStaff && (
+                <button
+                  className='btn btn-sm btn-secondary'
+                  onClick={handleReserve}
+                  disabled={selectedSeats.length === 0 || isClearing}
+                >
+                  Reserve
+                </button>
+              )}
+              <button
+                className='btn btn-sm btn-outline btn-warning'
+                onClick={handleClearSelection}
+                disabled={selectedSeats.length === 0 || isClearing}
+              >
+                {isClearing ? 'Clearing...' : 'Clear Selection'}
+              </button>
+            </div>
           </div>
-          
+
           {/* Pass the callback prop to SeatSelection */}
           <Suspense fallback={<SeatSkeleton />}>
-            <SeatSelection 
-              showId={Number(movieid)} 
-              onSeatSelectChange={handleSeatChange} 
+            <SeatSelection
+              showId={Number(movieid)}
+              onSeatSelectChange={handleSeatChange}
             />
           </Suspense>
         </div>
@@ -281,7 +336,7 @@ function RouteComponent() {
               >
                 {isPaymentDisabled ? 'Select Seats & Fill Details' : `Pay Now (Rs. ${totalAmountRs.toFixed(2)})`}
               </button>
-              
+
               <p className="text-xs text-center text-gray-500 mt-2">
                 Note: Amount sent to payment gateway is {totalAmountPaisa} in paisa.
               </p>

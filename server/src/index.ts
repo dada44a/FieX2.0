@@ -14,13 +14,13 @@ import { serve as InngestServe } from "inngest/hono";
 import testRoutes from "./routes/test.route.js";
 import { reportsRoutes } from "./routes/reports.routes.js";
 import requestRoutes from "./routes/request.routes.js";
-import { clerkMiddleware } from "@hono/clerk-auth";
+import { clerkMiddleware, getAuth } from "@hono/clerk-auth";
 
 export const app = new Hono();
 
 app.use("*", prettyJSON());
 app.use("*", cors(
-  { origin: "*" }
+  { origin: process.env.FRONTEND_URL || "http://localhost:3000", credentials: true }  
 ));
 app.use("/api/inngest", InngestServe({ client: inngest, functions }));
 app.use("*", clerkMiddleware());
@@ -35,9 +35,11 @@ app.route("/api/test", testRoutes);
 app.route("/api/reports", reportsRoutes);
 app.route("/api/requests", requestRoutes);
 
-app.get("/", (c) => {
-  return c.json({ message: "Hello, World!" });
-});
+
+app.get('/', async (c) => {
+  
+  return c.json({ message: 'Welcome to the Movie Theater API' });
+})
 
 app.post("/initiate", async (c) => {
   try {
@@ -60,8 +62,8 @@ app.post("/initiate", async (c) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          return_url: `http://localhost:3000/protected/movie/payment-success?showId=${showId}&customerId=${customerId}&phone=${encodeURIComponent(phone)}`,
-          website_url: "http://localhost:3000",
+          return_url: `${process.env.FRONTEND_URL}/protected/movie/payment-success?showId=${showId}&customerId=${customerId}&phone=${encodeURIComponent(phone)}`,
+          website_url: process.env.FRONTEND_URL,
           amount,
           purchase_order_id: Date.now().toString(),
           purchase_order_name,
