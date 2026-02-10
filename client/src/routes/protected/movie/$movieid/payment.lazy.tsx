@@ -78,7 +78,6 @@ function RouteComponent() {
 
   // State for contact form
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
 
 
@@ -183,8 +182,8 @@ function RouteComponent() {
     }
 
     // Ensure contact fields are filled (basic check)
-    if (!name || !email || !phone) {
-      alert("Please fill in your name, email, and phone number.");
+    if (!name || !phone) {
+      alert("Please fill in your name and phone number.");
       return;
     }
 
@@ -195,7 +194,6 @@ function RouteComponent() {
 
     const body = {
       name,
-      email,
       phone,
       amount: totalAmountPaisa,
       purchase_order_name: `Movie Tickets (${seatLabels})`,
@@ -229,18 +227,16 @@ function RouteComponent() {
   };
 
 
-  const isPaymentDisabled = selectedSeats.length === 0 || !name || !email || !phone || isClearing;
+  const isPaymentDisabled = selectedSeats.length === 0 || !name  || !phone || isClearing;
 
   return (
     <div className="min-h-screen p-4 flex items-center justify-center">
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start max-w-5xl w-full">
 
-        {/* SEAT LAYOUT */}
         <div className='p-4 rounded-lg shadow-inner'>
           <div className='flex justify-between items-center mb-4'>
             <h2 className='text-xl font-bold text-center'>Select Your Seats</h2>
-            {/* NEW: Clear Selection Button */}
             <div className='flex gap-2'>
               {isAdminOrStaff && (
                 <button
@@ -306,18 +302,6 @@ function RouteComponent() {
               </fieldset>
 
               <fieldset className="fieldset">
-                <legend className="fieldset-legend">Email</legend>
-                <input
-                  type="email"
-                  className="input input-bordered w-full"
-                  placeholder="email@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </fieldset>
-
-              <fieldset className="fieldset">
                 <legend className="fieldset-legend">Phone</legend>
                 <input
                   type="text"
@@ -337,9 +321,6 @@ function RouteComponent() {
                 {isPaymentDisabled ? 'Select Seats & Fill Details' : `Pay Now (Rs. ${totalAmountRs.toFixed(2)})`}
               </button>
 
-              <p className="text-xs text-center text-gray-500 mt-2">
-                Note: Amount sent to payment gateway is {totalAmountPaisa} in paisa.
-              </p>
             </div>
           </div>
         </div>

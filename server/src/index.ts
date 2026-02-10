@@ -20,7 +20,7 @@ export const app = new Hono();
 
 app.use("*", prettyJSON());
 app.use("*", cors(
-  { origin: process.env.FRONTEND_URL || "http://localhost:3000", credentials: true }  
+  { origin: process.env.FRONTEND_URL || "http://localhost:3000", credentials: true }
 ));
 app.use("/api/inngest", InngestServe({ client: inngest, functions }));
 app.use("*", clerkMiddleware());
@@ -37,7 +37,7 @@ app.route("/api/requests", requestRoutes);
 
 
 app.get('/', async (c) => {
-  
+
   return c.json({ message: 'Welcome to the Movie Theater API' });
 })
 
@@ -45,7 +45,6 @@ app.post("/initiate", async (c) => {
   try {
     const {
       name,
-      email,
       phone,
       amount,
       purchase_order_name,
@@ -67,7 +66,7 @@ app.post("/initiate", async (c) => {
           amount,
           purchase_order_id: Date.now().toString(),
           purchase_order_name,
-          customer_info: { name, email, phone },
+          customer_info: { name, phone },
         }),
       },
     );
