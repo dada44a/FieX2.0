@@ -15,7 +15,10 @@ export const useAddData = () => {
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        alert(`Failed to add data: ${errorData.message}`);
         throw new Error(`HTTP error! status: ${response.status}`);
+
       }
 
       const data = await response.json();

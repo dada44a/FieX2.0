@@ -5,7 +5,7 @@ export default function movie_info({movie}:{movie:any}) {
             <div className="rounded-lg overflow-hidden shadow-lg flex items-start justify-center">
               <img
                 loading='lazy'
-                src={movie.imageLink}
+                src={movie.imageUrl}
                 alt={movie.title}
                 className="w-[300px] h-[500px] object-cover"
               />

@@ -45,17 +45,23 @@ function RouteComponent() {
       <div className="mb-50">
         {/* Tabs */}
         <div className="tabs tabs-border">
-          {showDates.map((date, idx) => (
-            <input
-              key={date}
-              type="radio"
-              name="my_tabs_2"
-              className="tab"
-              aria-label={`Tab ${idx + 1}`}
-              defaultChecked={idx === 0}
-              onClick={() => setTabs(idx + 1)}
-            />
-          ))}
+          {showDates.map((date, idx) => {
+            const day = new Date(date + "T00:00:00").toLocaleDateString("en-US", {
+              weekday: "short", // use "long" for full name
+            });
+
+            return (
+              <input
+                key={date}
+                type="radio"
+                name="my_tabs_2"
+                className="tab"
+                aria-label={day}
+                defaultChecked={idx === 0}
+                onClick={() => setTabs(idx + 1)}
+              />
+            );
+          })}
         </div>
 
         {/* Tab Content */}
@@ -74,6 +80,7 @@ function RouteComponent() {
                     <Link to="/protected/movie/$movieid/payment" params={{ movieid: show.showId }} className='flex flex-col items-center'>
                       <h3>{show.showDate}</h3>
                       <small>Screen {show.screenId}</small>
+                      <p>{show.showTime}</p>
                     </Link>
                   </div>
                 ))}

@@ -113,6 +113,7 @@ function RouteComponent() {
           type="radio"
           name="my_tabs_1"
           className="tab "
+          aria-label="Screens"
           onClick={() => setTabs(4)}
         />
         <input

@@ -36,6 +36,10 @@ screenRoutes.post('/', async (c) => {
   try {
     const db = connectDb();
     const data = await c.req.json();
+    if(data.price <= 0 || data.price > 2000) {
+      return c.json({ message: 'Price must be a positive number and less than or equal to 2000' }, 400);
+    }
+    
     const newScreening = await db.insert(screens).values(data).returning();
     return c.json({ message: 'Create a new screen', data: newScreening });
   } catch (error: any) {
