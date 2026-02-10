@@ -45,6 +45,7 @@ app.post("/initiate", async (c) => {
   try {
     const {
       name,
+      email,
       phone,
       amount,
       purchase_order_name,
@@ -61,12 +62,12 @@ app.post("/initiate", async (c) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          return_url: `${process.env.FRONTEND_URL}/protected/movie/payment-success?showId=${showId}&customerId=${customerId}&phone=${encodeURIComponent(phone)}`,
+          return_url: `${process.env.FRONTEND_URL}/protected/movie/payment-success?showId=${showId}&customerId=${customerId}&phone=${encodeURIComponent(phone)}&email=${encodeURIComponent(email)}`,
           website_url: process.env.FRONTEND_URL,
           amount,
           purchase_order_id: Date.now().toString(),
           purchase_order_name,
-          customer_info: { name, phone },
+          customer_info: { name, email, phone },
         }),
       },
     );

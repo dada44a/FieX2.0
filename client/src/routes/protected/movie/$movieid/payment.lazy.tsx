@@ -65,7 +65,7 @@ export const SeatSkeleton: React.FC = React.memo(() => {
 })
 
 // Define a placeholder price per ticket
-const TICKET_PRICE = 300;
+// TICKET_PRICE will be dynamic
 
 function RouteComponent() {
   const { movieid } = Route.useParams();
@@ -78,6 +78,7 @@ function RouteComponent() {
 
   // State for contact form
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
 
 
@@ -124,19 +125,31 @@ function RouteComponent() {
   };
 
 
-  const totalAmountRs = selectedSeats.length * TICKET_PRICE;
-  const totalAmountPaisa = totalAmountRs * 100;
-
-  const seatLabels = useMemo(() => {
-    return selectedSeats.map(s => `${s.row}${s.column}`).join(', ');
-  }, [selectedSeats]);
-
-
   const { data: userData } = useQuery({
     queryKey: ['user-role', userId],
     queryFn: () => fetch(`${import.meta.env.VITE_API_LINK}/api/users/${userId}`).then(res => res.json()),
     enabled: !!userId,
   });
+
+  const { data: showData } = useQuery({
+    queryKey: ['show', movieid],
+    queryFn: () => fetch(`${import.meta.env.VITE_API_LINK}/api/shows/${movieid}`).then(res => res.json().then(d => d.show)),
+  });
+
+  const { data: screenData } = useQuery({
+    queryKey: ['screen', showData?.screenId],
+    queryFn: () => fetch(`${import.meta.env.VITE_API_LINK}/api/screens/${showData.screenId}`).then(res => res.json().then(d => d.data)),
+    enabled: !!showData?.screenId,
+  });
+
+  const seatLabels = useMemo(() => {
+    return selectedSeats.map(s => `${s.row}${s.column}`).join(', ');
+  }, [selectedSeats]);
+
+  const ticketPrice = screenData?.price || 0;
+
+  const totalAmountRs = selectedSeats.length * ticketPrice;
+  const totalAmountPaisa = totalAmountRs * 100;
 
   const isAdminOrStaff = userData?.role === 'ADMIN' || userData?.role === 'STAFF';
 
@@ -182,8 +195,8 @@ function RouteComponent() {
     }
 
     // Ensure contact fields are filled (basic check)
-    if (!name || !phone) {
-      alert("Please fill in your name and phone number.");
+    if (!name || !email || !phone) {
+      alert("Please fill in your name, email, and phone number.");
       return;
     }
 
@@ -194,6 +207,7 @@ function RouteComponent() {
 
     const body = {
       name,
+      email,
       phone,
       amount: totalAmountPaisa,
       purchase_order_name: `Movie Tickets (${seatLabels})`,
@@ -227,7 +241,7 @@ function RouteComponent() {
   };
 
 
-  const isPaymentDisabled = selectedSeats.length === 0 || !name  || !phone || isClearing;
+  const isPaymentDisabled = selectedSeats.length === 0 || !name || !email || !phone || isClearing;
 
   return (
     <div className="min-h-screen p-4 flex items-center justify-center">
@@ -297,6 +311,18 @@ function RouteComponent() {
                   placeholder="Type here"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </fieldset>
+
+              <fieldset className="fieldset">
+                <legend className="fieldset-legend">Email</legend>
+                <input
+                  type="email"
+                  className="input input-bordered w-full"
+                  placeholder="example@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </fieldset>

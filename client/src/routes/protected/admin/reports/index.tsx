@@ -47,6 +47,7 @@ interface ReportRow {
   seatColumn: number;
   price: number;
   bookedDate: string;
+  userName: string;
 }
 
 const columnHelper = createColumnHelper<ReportRow>();
@@ -81,6 +82,7 @@ function RouteComponent() {
       columnHelper.accessor('seatColumn', { header: 'Seat Column' }),
       columnHelper.accessor('price', { header: 'Price' }),
       columnHelper.accessor('bookedDate', { header: 'Booked Date' }),
+      columnHelper.accessor('userName', { header: 'Customer Name' }),
     ],
     []
   );

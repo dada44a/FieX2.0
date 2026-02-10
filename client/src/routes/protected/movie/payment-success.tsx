@@ -22,6 +22,7 @@ function RouteComponent() {
     purchase_order_name,
     showId,
     customerId,
+    email,
   } = data;
 
   const isSuccess = status === "Completed";
@@ -39,7 +40,8 @@ function RouteComponent() {
           transaction_id,
           mobile,
           pidx,
-          phone
+          phone,
+          email
         }),
       });
     } catch (error) {

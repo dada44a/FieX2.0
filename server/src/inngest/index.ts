@@ -158,7 +158,7 @@ const bookSeats = inngest.createFunction(
       const db = connectDb();
       const now = new Date();
       const time = now.toLocaleTimeString();
-      const { id, userId, transaction_id, phone, pidx } = event.data;
+      const { id, userId, transaction_id, phone, pidx, email } = event.data;
       const result = await db
         .update(showSeats)
         .set({
@@ -213,6 +213,7 @@ const bookSeats = inngest.createFunction(
         data: {
           ticket_id,
           userId,
+          email,
         },
       });
 
@@ -285,7 +286,7 @@ const sendTicketEmail = inngest.createFunction(
   { event: "ticket/send-email" },
   async ({ event, step }) => {
     try {
-      const { ticket_id, userId } = event.data;
+      const { ticket_id, userId, email: passedEmail } = event.data;
 
       const db = connectDb();
       const user = await db
@@ -294,11 +295,18 @@ const sendTicketEmail = inngest.createFunction(
         .where(eq(users.clerkId, userId))
         .then((res: any) => res[0]);
 
-      await step.sleep("wait-before-fetch", "30s"); // wait 2 seconds
+      await step.sleep("wait-before-fetch", "30s"); // wait 30 seconds
 
+      const apiUrl = process.env.VITE_API_LINK || 'http://localhost:4000';
+      console.log(`Fetching QR data from: ${apiUrl}/api/tickets/${ticket_id}/qr`);
+      const fetched = await fetch(`${apiUrl}/api/tickets/${ticket_id}/qr`);
 
-      const fetched = await fetch(`https://fie-x2-0.vercel.app/api/tickets/${ticket_id}/qr`);
+      if (!fetched.ok) {
+        throw new Error(`Failed to fetch QR data: ${fetched.status} ${fetched.statusText}`);
+      }
+
       const { data } = await fetched.json();
+      if (!data) throw new Error("Ticket data not found");
       const { data: qrData, qrCode } = data;
       const subject = "Your Movie Ticket";
       const html = `
@@ -317,19 +325,19 @@ const sendTicketEmail = inngest.createFunction(
       `;
 
       const transporter = nodemailer.createTransport({
-        host: "smtp-relay.brevo.com",
-        port: 587,
+        host: process.env.BREVO_SMTP,
+        port: Number(process.env.BREVO_PORT),
         secure: false,
         auth: {
-          user: "9cb581001@smtp-brevo.com",
-          pass: process.env.BREVO_SMTP_KEY as string // API KEY from Brevo
+          user: process.env.BREVO_USER,
+          pass: process.env.BREVO_SMTP_KEY,
         }
       });
 
-      async function sendEmail() {
+      async function sendTicket() {
         const info = await transporter.sendMail({
-          from: 'FireX Cinema <dada44w@gmail.com>',
-          to: user.email as string,
+          from: `"FireX Cinema" <dada44w@gmail.com>`,
+          to: user?.email || passedEmail,
           subject: "Your Movie Ticket",
           html: html,
           attachments: [
@@ -342,9 +350,15 @@ const sendTicketEmail = inngest.createFunction(
         });
 
         console.log("Message sent:", info.messageId);
+        return info;
       }
 
-      sendEmail();
+      await step.run("send-email", async () => {
+        console.log(`Attempting to send email to: ${user?.email || passedEmail}`);
+        const result = await sendTicket();
+        console.log("Email sending result:", result);
+        return result;
+      });
 
       return { success: true };
     } catch (err: any) {

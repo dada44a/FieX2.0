@@ -106,7 +106,7 @@ seatRoutes.put("/clear/:id", async (c) => {
 
 seatRoutes.put("/booked", async (c) => {
   try {
-    const { id, userId, transaction_id, mobile, phone, pidx, showId } =
+    const { id, userId, transaction_id, mobile, phone, pidx, showId, email } =
       await c.req.json();
     if (!id || !userId || !transaction_id || !mobile || !pidx)
       return c.json({ message: "Missing Value" });
@@ -121,6 +121,7 @@ seatRoutes.put("/booked", async (c) => {
         pidx,
         showId,
         phone,
+        email,
       },
     });
 

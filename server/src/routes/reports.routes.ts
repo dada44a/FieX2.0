@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { connectDb } from "../db/init.js";
-import { and, count, eq,  gte, lte, sum } from "drizzle-orm";
-import { movies, screens, seats, shows, showSeats, tickets } from "../db/schema.js";
+import { and, count, eq, gte, lte, sum } from "drizzle-orm";
+import { movies, screens, seats, shows, showSeats, tickets, users } from "../db/schema.js";
 
 export const reportsRoutes = new Hono();
 reportsRoutes.get("/sales", async (c) => {
@@ -66,21 +66,21 @@ reportsRoutes.get("/monthly-stats", async (c) => {
 
   // ---------- TOTAL BOOKINGS & REVENUE ----------
   const bookingsRes = await db
-  .select({
-    totalBookings: count(showSeats.id),
-    totalRevenue: sum(screens.price),
-  })
-  .from(showSeats)
-  .leftJoin(tickets, eq(showSeats.ticketId, tickets.id))
-  .leftJoin(screens, eq(showSeats.screenId, screens.id))
-  .where(
-    and(
-      eq(showSeats.status, "BOOKED"),
-      gte(tickets.paymentDate, startOfMonthStr),
-      lte(tickets.paymentDate, endOfMonthStr)
+    .select({
+      totalBookings: count(showSeats.id),
+      totalRevenue: sum(screens.price),
+    })
+    .from(showSeats)
+    .leftJoin(tickets, eq(showSeats.ticketId, tickets.id))
+    .leftJoin(screens, eq(showSeats.screenId, screens.id))
+    .where(
+      and(
+        eq(showSeats.status, "BOOKED"),
+        gte(tickets.paymentDate, startOfMonthStr),
+        lte(tickets.paymentDate, endOfMonthStr)
+      )
     )
-  )
-  .execute();
+    .execute();
 
   const totalBookings = bookingsRes[0].totalBookings ?? 0;
   const totalRevenue = bookingsRes[0].totalRevenue ?? 0;
@@ -226,12 +226,14 @@ reportsRoutes.get("/reports", async (c) => {
       seatColumn: showSeats.column,
       price: screens.price,
       bookedDate: tickets.paymentDate,
+      userName: users.name,
     })
     .from(showSeats)
     .leftJoin(tickets, eq(showSeats.ticketId, tickets.id))
     .leftJoin(shows, eq(showSeats.showId, shows.id))
     .leftJoin(movies, eq(shows.movieId, movies.id))
     .leftJoin(screens, eq(showSeats.screenId, screens.id))
+    .leftJoin(users, eq(tickets.customerId, users.clerkId))
     .where(
       and(
         eq(showSeats.status, "BOOKED"),
