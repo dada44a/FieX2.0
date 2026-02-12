@@ -2,10 +2,11 @@ import { Inngest, step } from "inngest";
 import { connectDb } from "../db/init.js";
 import { and, eq, lte, ne } from "drizzle-orm";
 import { seats, shows, showSeats, tickets, users } from "../db/schema.js";
+
 import Brevo from '@getbrevo/brevo';
 
 // Create a client to send and receive events
-export const inngest = new Inngest({ id: "my-app" });
+
 
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
@@ -13,6 +14,7 @@ import axios from "axios";
 
 dotenv.config();
 
+export const inngest = new Inngest({ id: "my-app", eventKey:process.env.INNGEST_EVENT_KEY, signingKey: process.env.INNGEST_SIGNING_KEY });
 export const sendEmail = async ({ to, subject, html }: any) => {
   try {
     const transporter = nodemailer.createTransport({
@@ -21,7 +23,7 @@ export const sendEmail = async ({ to, subject, html }: any) => {
       secure: false,
       auth: {
         user: process.env.BREVO_USER,
-        pass: process.env.BREVO_PASS,
+        pass: process.env.BREVO_SMTP_KEY,
       },
     });
 
