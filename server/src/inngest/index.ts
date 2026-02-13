@@ -299,7 +299,7 @@ const sendTicketEmail = inngest.createFunction(
 
       await step.sleep("wait-before-fetch", "30s"); // wait 30 seconds
 
-      const apiUrl = process.env.VITE_API_LINK || 'http://localhost:4000';
+      const apiUrl = process.env.BACKEND_URL || 'http://localhost:4000';
       console.log(`Fetching QR data from: ${apiUrl}/api/tickets/${ticket_id}/qr`);
       const fetched = await fetch(`${apiUrl}/api/tickets/${ticket_id}/qr`);
 
