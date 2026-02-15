@@ -15,6 +15,7 @@ import testRoutes from "./routes/test.route.js";
 import { reportsRoutes } from "./routes/reports.routes.js";
 import requestRoutes from "./routes/request.routes.js";
 import { clerkMiddleware, getAuth } from "@hono/clerk-auth";
+import { authMiddleware } from "./middleware/authmiddleware.js";
 
 export const app = new Hono();
 
@@ -23,6 +24,8 @@ app.use("*", cors(
   { origin: process.env.FRONTEND_URL || "http://localhost:3000", credentials: true }
 ));
 app.use("/api/inngest", InngestServe({ client: inngest, functions }));
+
+app.use("*", authMiddleware)
 app.use("*", clerkMiddleware());
 // routes
 app.route("/api/seats", seatRoutes);
@@ -92,6 +95,10 @@ app.post("/initiate", async (c) => {
     return c.json({ error: "Failed to initiate payment" }, 500);
   }
 });
+
+app.get("/test", authMiddleware, async (c) => {
+  return c.json({ message: "Test route is working!" });
+})
 
 serve({
   fetch: app.fetch,
