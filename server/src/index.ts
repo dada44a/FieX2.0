@@ -25,8 +25,6 @@ app.use("*", cors(
 ));
 app.use("/api/inngest", InngestServe({ client: inngest, functions }));
 
-app.use("/api/*", authMiddleware)
-app.use("*", clerkMiddleware());
 // routes
 app.route("/api/seats", seatRoutes);
 app.route("/api/screens", screenRoutes);
